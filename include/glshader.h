@@ -8,21 +8,12 @@
 
 class ShaderType
 {
-    GLuint _shaderId;
-    GLuint _matrixUniformId;
-
-    std::string _matrixUniformName;
-    std::string _vertexAttributeName;
-    std::string _colorAttributeName;
-
 public:
     ShaderType()
-        : _shaderId(0), _matrixUniformId(0),
-          _matrixUniformName("u_matrix"),
-          _vertexAttributeName("vertex"), _colorAttributeName("color")
     { }
 
-    virtual ~ShaderType() { }
+    virtual ~ShaderType()
+    { }
 
     GLuint id() const
     {
@@ -82,7 +73,9 @@ public:
         return true;
     }
 
-    virtual bool compile(std::string const &vertShaderStr, std::string const &fragShaderStr)
+    virtual bool compile(
+        const std::string &vertShaderStr,
+        const std::string &fragShaderStr)
     {
         GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
         GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -103,7 +96,7 @@ public:
             glGetShaderiv(vertShader, GL_INFO_LOG_LENGTH, &logLength);
             std::vector<char> vertShaderError(static_cast<size_t>((logLength > 1) ? logLength : 1));
             glGetShaderInfoLog(vertShader, logLength, NULL, &vertShaderError[0]);
-            std::cout << &vertShaderError[0] << std::endl;
+            std::cerr << &vertShaderError[0] << std::endl;
 
             return false;
         }
@@ -119,7 +112,7 @@ public:
             glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &logLength);
             std::vector<char> fragShaderError(static_cast<size_t>((logLength > 1) ? logLength : 1));
             glGetShaderInfoLog(fragShader, logLength, NULL, &fragShaderError[0]);
-            std::cout << &fragShaderError[0] << std::endl;
+            std::cerr << &fragShaderError[0] << std::endl;
 
             return false;
         }
@@ -135,7 +128,7 @@ public:
             glGetProgramiv(_shaderId, GL_INFO_LOG_LENGTH, &logLength);
             std::vector<char> programError(static_cast<size_t>((logLength > 1) ? logLength : 1));
             glGetProgramInfoLog(_shaderId, logLength, NULL, &programError[0]);
-            std::cout << &programError[0] << std::endl;
+            std::cerr << &programError[0] << std::endl;
 
             return false;
         }
@@ -148,7 +141,8 @@ public:
         return true;
     }
 
-    void setupMatrices(glm::mat4 const &matrix)
+    void setupMatrices(
+        const glm::mat4 &matrix)
     {
         use();
 
@@ -160,13 +154,35 @@ public:
         auto vertexSize = sizeof(glm::vec3) + sizeof(glm::vec4);
 
         auto vertexAttrib = glGetAttribLocation(_shaderId, _vertexAttributeName.c_str());
-        glVertexAttribPointer(GLuint(vertexAttrib), sizeof(glm::vec3) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, 0);
+        glVertexAttribPointer(
+            GLuint(vertexAttrib),
+            sizeof(glm::vec3) / sizeof(float),
+            GL_FLOAT,
+            GL_FALSE,
+            vertexSize, 0);
+
         glEnableVertexAttribArray(GLuint(vertexAttrib));
 
         auto colorAttrib = glGetAttribLocation(_shaderId, _colorAttributeName.c_str());
-        glVertexAttribPointer(GLuint(colorAttrib), sizeof(glm::vec4) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, reinterpret_cast<const GLvoid*>(sizeof(glm::vec3)));
+        glVertexAttribPointer(
+            GLuint(colorAttrib),
+            sizeof(glm::vec4) / sizeof(float),
+            GL_FLOAT,
+            GL_FALSE,
+            vertexSize,
+            reinterpret_cast<const GLvoid*>(sizeof(glm::vec3)));
+
         glEnableVertexAttribArray(GLuint(colorAttrib));
     }
+
+private:
+    GLuint _shaderId = 0;
+    GLuint _matrixUniformId = 0;
+
+    std::string _matrixUniformName = "u_matrix";
+    std::string _vertexAttributeName = "vertex";
+    std::string _colorAttributeName = "color";
+
 };
 
 #endif // GLSHADER_H

@@ -9,21 +9,23 @@ namespace glm
 
 struct vec2
 {
-    vec2() : x(0), y(0) { }
+    vec2() { }
     vec2(float v) : x(v), y(v) { }
     vec2(float _x, float _y) : x(_x), y(_y) { }
 
-    union { float x; float s; };
-    union { float y; float t; };
+    union { float x; float s; } = 0.0f;
+    union { float y; float t; } = 0.0f;
 
-    float const &operator[] (int index) const
+    float const &operator[] (
+        int index) const
     {
         if (index == 0) return x;
         
         return y;
     }
 
-    float &operator[] (int index)
+    float &operator[] (
+        int index)
     {
         if (index == 0) return x;
         
@@ -33,15 +35,16 @@ struct vec2
 
 struct vec3
 {
-    vec3() : x(0), y(0), z(0) { }
+    vec3() { }
     vec3(float v) : x(v), y(v), z(v) { }
     vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
 
-    union { float x; float r; };
-    union { float y; float g; };
-    union { float z; float b; };
+    union { float x; float r; } = 0.0f;
+    union { float y; float g; } = 0.0f;
+    union { float z; float b; } = 0.0f;
 
-    float const &operator[] (int index) const
+    float const &operator[] (
+        int index) const
     {
         if (index == 0) return x;
         if (index == 1) return y;
@@ -49,7 +52,8 @@ struct vec3
         return z;
     }
 
-    float &operator[] (int index)
+    float &operator[] (
+        int index)
     {
         if (index == 0) return x;
         if (index == 1) return y;
@@ -60,16 +64,35 @@ struct vec3
 
 struct vec4
 {
-    vec4() : x(0), y(0), z(0), w(0) { }
-    vec4(float v) : x(v), y(v), z(v), w(v) { }
-    vec4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) { }
+    vec4()
+    { }
+    
+    vec4(
+        float v)
+        : x(v),
+          y(v),
+          z(v),
+          w(v)
+    { }
+    
+    vec4(
+        float _x,
+        float _y,
+        float _z,
+        float _w)
+        : x(_x),
+          y(_y),
+          z(_z),
+          w(_w)
+    { }
 
-    union { float x; float r; };
-    union { float y; float g; };
-    union { float z; float b; };
-    union { float w; float a; };
+    union { float x; float r; } = 0.0f;
+    union { float y; float g; } = 0.0f;
+    union { float z; float b; } = 0.0f;
+    union { float w; float a; } = 0.0f;
 
-    float const &operator[] (int index) const
+    float const &operator[] (
+        int index) const
     {
         if (index == 0) return x;
         if (index == 1) return y;
@@ -78,7 +101,8 @@ struct vec4
         return w;
     }
 
-    float &operator[] (int index)
+    float &operator[] (
+        int index)
     {
         if (index == 0) return x;
         if (index == 1) return y;
@@ -90,8 +114,11 @@ struct vec4
 
 struct mat4
 {
-    mat4() { }
-    mat4(float v)
+    mat4()
+    { }
+    
+    mat4(
+        float v)
     {
         // Identity
         values[0].x = v;
@@ -99,7 +126,11 @@ struct mat4
         values[2].z = v;
         values[3].w = v;
     }
-    mat4(vec4 const &v0, vec4 const &v1, vec4 const &v2, vec4 const &v3)
+    mat4(
+        vec4 const &v0,
+        vec4 const &v1,
+        vec4 const &v2,
+        vec4 const &v3)
     {
         values[0] = v0;
         values[1] = v1;
@@ -109,12 +140,14 @@ struct mat4
 
     vec4 values[4];
 
-    vec4 const &operator [] (int index) const
+    vec4 const &operator [] (
+        int index) const
     {
         return values[index];
     }
 
-    vec4 &operator [] (int index)
+    vec4 &operator [] (
+        int index)
     {
         return values[index];
     }

@@ -8,8 +8,14 @@ class Application
 {
 public:
     virtual ~Application();
-    virtual int Run(std::function<bool()> tick) = 0;
-    static Application *Create(std::function<bool()> intialize, std::function<void(int width, int height)> resize, std::function<void()> destroy);
+    
+    virtual int Run(
+        std::function<bool()> tick) = 0;
+        
+    static Application *Create(
+        std::function<bool()> intialize,
+        std::function<void(int width, int height)> resize,
+        std::function<void()> destroy);
 };
 
 #endif // APPLICATION_H
@@ -29,6 +35,16 @@ typedef HGLRC (WINAPI * PFNGLXCREATECONTEXTATTRIBS) (HDC hDC, HGLRC hShareContex
 
 class Win32Application : public Application
 {
+public:
+    bool Startup(
+        std::function<bool()> intialize,
+        std::function<void(int width, int height)> resize,
+        std::function<void()> destroy);
+        
+    virtual int Run(
+        std::function<bool()> tick);
+
+private:
     std::function<void(int width, int height)> _resize;
     std::function<void()> _destroy;
     HINSTANCE _hInstance;
@@ -37,18 +53,26 @@ class Win32Application : public Application
     HGLRC _hRC;
     PFNGLXCREATECONTEXTATTRIBS _pfnGlxCreateContext;
     
-    virtual void Destroy(const char *errorMessage = nullptr);
+    virtual void Destroy(
+        const char *errorMessage = nullptr);
     
-    LRESULT CALLBACK objectProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
-    static LRESULT CALLBACK staticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-public:
-    bool Startup(std::function<bool()> intialize, std::function<void(int width, int height)> resize, std::function<void()> destroy);
-    virtual int Run(std::function<bool()> tick);
+    LRESULT CALLBACK objectProc(
+        UINT uMsg,
+        WPARAM wParam,
+        LPARAM lParam);
+    
+    static LRESULT CALLBACK staticProc(
+        HWND hWnd,
+        UINT uMsg,
+        WPARAM wParam,
+        LPARAM lParam);
 
 };
 
-bool Win32Application::Startup(std::function<bool()> intialize, std::function<void(int width, int height)> resize, std::function<void()> destroy)
+bool Win32Application::Startup(
+    std::function<bool()> intialize,
+    std::function<void(int width, int height)> resize,
+    std::function<void()> destroy)
 {
     _resize = resize;
     _destroy = destroy;
@@ -58,16 +82,16 @@ bool Win32Application::Startup(std::function<bool()> intialize, std::function<vo
 
     if (GetClassInfo(_hInstance, EXAMPLE_NAME, &wc) == FALSE)
     {
-        wc.style			= CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-        wc.lpfnWndProc		= (WNDPROC) Win32Application::staticProc;
-        wc.cbClsExtra		= 0;
-        wc.cbWndExtra		= 0;
-        wc.hInstance		= _hInstance;
-        wc.hIcon			= LoadIcon(nullptr, IDI_WINLOGO);
-        wc.hCursor			= LoadCursor(nullptr, IDC_ARROW);
-        wc.hbrBackground	= nullptr;
-        wc.lpszMenuName		= nullptr;
-        wc.lpszClassName	= EXAMPLE_NAME;
+        wc.style            = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+        wc.lpfnWndProc      = (WNDPROC) Win32Application::staticProc;
+        wc.cbClsExtra       = 0;
+        wc.cbWndExtra       = 0;
+        wc.hInstance        = _hInstance;
+        wc.hIcon            = LoadIcon(nullptr, IDI_WINLOGO);
+        wc.hCursor          = LoadCursor(nullptr, IDC_ARROW);
+        wc.hbrBackground    = nullptr;
+        wc.lpszMenuName     = nullptr;
+        wc.lpszClassName    = EXAMPLE_NAME;
 
         if (RegisterClass(&wc) == FALSE)
         {
@@ -99,26 +123,26 @@ bool Win32Application::Startup(std::function<bool()> intialize, std::function<vo
         return false;
     }
     
-    static	PIXELFORMATDESCRIPTOR pfd =
+    static PIXELFORMATDESCRIPTOR pfd =
     {
-        sizeof(PIXELFORMATDESCRIPTOR),				// Size Of This Pixel Format Descriptor
-        1,											// Version Number
-        PFD_DRAW_TO_WINDOW |						// Format Must Support Window
-        PFD_SUPPORT_OPENGL |						// Format Must Support CodeGL
-        PFD_DOUBLEBUFFER,							// Must Support Double Buffering
-        PFD_TYPE_RGBA,								// Request An RGBA Format
-        32,											// Select Our Color Depth
-        0, 0, 0, 0, 0, 0,							// Color Bits Ignored
-        0,											// No Alpha Buffer
-        0,											// Shift Bit Ignored
-        0,											// No Accumulation Buffer
-        0, 0, 0, 0,									// Accumulation Bits Ignored
-        16,											// 16Bit Z-Buffer (Depth Buffer)
-        0,											// No Stencil Buffer
-        0,											// No Auxiliary Buffer
-        PFD_MAIN_PLANE,								// Main Drawing Layer
-        0,											// Reserved
-        0, 0, 0										// Layer Masks Ignored
+        sizeof(PIXELFORMATDESCRIPTOR), // Size Of This Pixel Format Descriptor
+        1,                             // Version Number
+        PFD_DRAW_TO_WINDOW |           // Format Must Support Window
+        PFD_SUPPORT_OPENGL |           // Format Must Support CodeGL
+        PFD_DOUBLEBUFFER,              // Must Support Double Buffering
+        PFD_TYPE_RGBA,                 // Request An RGBA Format
+        32,                            // Select Our Color Depth
+        0, 0, 0, 0, 0, 0,              // Color Bits Ignored
+        0,                             // No Alpha Buffer
+        0,                             // Shift Bit Ignored
+        0,                             // No Accumulation Buffer
+        0, 0, 0, 0,                    // Accumulation Bits Ignored
+        16,                            // 16Bit Z-Buffer (Depth Buffer)
+        0,                             // No Stencil Buffer
+        0,                             // No Auxiliary Buffer
+        PFD_MAIN_PLANE,                // Main Drawing Layer
+        0,                             // Reserved
+        0, 0, 0                        // Layer Masks Ignored
     };
 
     auto pixelFormat = ChoosePixelFormat(_hDC, &pfd);
@@ -180,7 +204,8 @@ bool Win32Application::Startup(std::function<bool()> intialize, std::function<vo
     return true;
 }
 
-int Win32Application::Run(std::function<bool()> tick)
+int Win32Application::Run(
+    std::function<bool()> tick)
 {
     bool running = true;
 
@@ -215,7 +240,8 @@ int Win32Application::Run(std::function<bool()> tick)
     return 0;
 }
 
-void Win32Application::Destroy(const char *errorMessage)
+void Win32Application::Destroy(
+    const char *errorMessage)
 {
     if (errorMessage != nullptr)
     {
@@ -239,7 +265,10 @@ void Win32Application::Destroy(const char *errorMessage)
     }
 }
 
-LRESULT CALLBACK Win32Application::objectProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK Win32Application::objectProc(
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam)
 {
     switch (uMsg)
     {
@@ -256,7 +285,11 @@ LRESULT CALLBACK Win32Application::objectProc(UINT uMsg, WPARAM wParam, LPARAM l
     return DefWindowProc(this->_hWnd, uMsg, wParam, lParam);
 }
 
-LRESULT CALLBACK Win32Application::staticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK Win32Application::staticProc(
+    HWND hWnd,
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam)
 {
     Win32Application *app = nullptr;
 
@@ -286,7 +319,10 @@ LRESULT CALLBACK Win32Application::staticProc(HWND hWnd, UINT uMsg, WPARAM wPara
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-Application *Application::Create(std::function<bool()> initialize, std::function<void(int width, int height)> resize, std::function<void()> destroy)
+Application *Application::Create(
+    std::function<bool()> initialize,
+    std::function<void(int width, int height)> resize,
+    std::function<void()> destroy)
 {
     static Win32Application app;
     
