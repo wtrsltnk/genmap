@@ -301,14 +301,14 @@ LRESULT CALLBACK Win32Application::staticProc(
         {
             app->_hWnd = hWnd;
 
-            SetWindowLong(hWnd, GWL_USERDATA, reinterpret_cast <long> (app));
+            SetWindowLong(hWnd, GWLP_USERDATA, reinterpret_cast <long long> (app));
 
             return app->objectProc(uMsg, wParam, lParam);
         }
     }
     else
     {
-        app = reinterpret_cast <Win32Application*>(GetWindowLong(hWnd, GWL_USERDATA));
+        app = reinterpret_cast <Win32Application*>(GetWindowLong(hWnd, GWLP_USERDATA));
 
         if (app != nullptr)
         {

@@ -11,6 +11,7 @@ add_executable(genmap
     include/glmath.h
     include/glshader.h
     main.cpp
+    batchrenderer.cpp
     hl1bspasset.cpp
     hl1wadasset.cpp
     hltexture.cpp

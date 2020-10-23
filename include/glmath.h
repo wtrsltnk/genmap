@@ -13,8 +13,8 @@ struct vec2
     vec2(float v) : x(v), y(v) { }
     vec2(float _x, float _y) : x(_x), y(_y) { }
 
-    union { float x; float s; } = 0.0f;
-    union { float y; float t; } = 0.0f;
+    union { float x = 0.0f; float s; };
+    union { float y = 0.0f; float t; };
 
     float const &operator[] (
         int index) const
@@ -39,9 +39,9 @@ struct vec3
     vec3(float v) : x(v), y(v), z(v) { }
     vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
 
-    union { float x; float r; } = 0.0f;
-    union { float y; float g; } = 0.0f;
-    union { float z; float b; } = 0.0f;
+    union { float x = 0.0f; float r; };
+    union { float y = 0.0f; float g; };
+    union { float z = 0.0f; float b; };
 
     float const &operator[] (
         int index) const
@@ -86,10 +86,10 @@ struct vec4
           w(_w)
     { }
 
-    union { float x; float r; } = 0.0f;
-    union { float y; float g; } = 0.0f;
-    union { float z; float b; } = 0.0f;
-    union { float w; float a; } = 0.0f;
+    union { float x = 0.0f; float r; };
+    union { float y = 0.0f; float g; };
+    union { float z = 0.0f; float b; };
+    union { float w = 0.0f; float a; };
 
     float const &operator[] (
         int index) const
