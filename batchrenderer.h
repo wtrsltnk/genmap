@@ -1,7 +1,7 @@
 #ifndef _BATCHRENDERER_H_
 #define _BATCHRENDERER_H_
 
-#include "include/glmath.h"
+#include <glm/glm.hpp>
 #include <map>
 #include <memory>
 #include <string>

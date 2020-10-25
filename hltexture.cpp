@@ -1,22 +1,31 @@
 #include "hltexture.h"
 
-#include "include/glmath.h"
 #include <cstring>
+#include <glm/glm.hpp>
 
 using namespace valve;
 
 Texture::Texture()
-    : _name(""), _width(0), _height(0), _bpp(0), _format(-1), _repeat(true), _data(0)
-{ }
+    : _name(""),
+      _width(0),
+      _height(0),
+      _bpp(0),
+      _format(-1),
+      _repeat(true),
+      _data(0)
+{}
 
 Texture::~Texture()
 {
-    if (this->_data != 0) delete []this->_data;
+    if (this->_data != 0)
+    {
+        delete[] this->_data;
+    }
 }
 
-Texture* Texture::Copy() const
+Texture *Texture::Copy() const
 {
-    Texture* result = new Texture();
+    Texture *result = new Texture();
 
     result->_name = std::string(this->_name);
 
@@ -40,11 +49,12 @@ Texture* Texture::Copy() const
     return result;
 }
 
-void Texture::CopyFrom(const Texture& from)
+void Texture::CopyFrom(
+    const Texture &from)
 {
     if (this->_data != nullptr)
     {
-        delete []this->_data;
+        delete[] this->_data;
         this->_data = nullptr;
     }
 
@@ -66,32 +76,42 @@ void Texture::CopyFrom(const Texture& from)
 void Texture::DefaultTexture()
 {
     int value;
-    for (int row = 0; row < this->_width; row++) {
-       for (int col = 0; col < this->_height; col++) {
-          // Each cell is 8x8, value is 0 or 255 (black or white)
-          value = (((row & 0x8) == 0) ^ ((col & 0x8) == 0)) * 255;
-          SetPixelAt(glm::vec4(float(value), float(value), float(value), float(value)), row, col);
-       }
+    for (int row = 0; row < this->_width; row++)
+    {
+        for (int col = 0; col < this->_height; col++)
+        {
+            // Each cell is 8x8, value is 0 or 255 (black or white)
+            value = (((row & 0x8) == 0) ^ ((col & 0x8) == 0)) * 255;
+            SetPixelAt(glm::vec4(float(value), float(value), float(value), float(value)), row, col);
+        }
     }
 }
 
-glm::vec4 Texture::PixelAt(int x, int y) const
+glm::vec4 Texture::PixelAt(
+    int x,
+    int y) const
 {
     glm::vec4 r(1.0f, 1.0f, 1.0f, 1.0f);
-    int p = x + (y*_width);
-    for (int i = 0 ; i < this->_bpp; i++)
+    int p = x + (y * _width);
+    for (int i = 0; i < this->_bpp; i++)
         r[i] = _data[(p * _bpp) + i];
     return r;
 }
 
-void Texture::SetPixelAt(const glm::vec4& pixel, int x, int y)
+void Texture::SetPixelAt(
+    const glm::vec4 &pixel,
+    int x,
+    int y)
 {
-    int p = x + (y*_width);
-    for (int i = 0 ; i < this->_bpp; i++)
-        _data[(p * _bpp) + i] = pixel[i];
+    int p = x + (y * _width);
+    for (int i = 0; i < this->_bpp; i++)
+    {
+        _data[(p * _bpp) + i] = static_cast<unsigned char>(pixel[i]);
+    }
 }
 
-void Texture::Fill(const glm::vec4& color)
+void Texture::Fill(
+    const glm::vec4 &color)
 {
     for (int y = 0; y < _height; y++)
     {
@@ -102,7 +122,8 @@ void Texture::Fill(const glm::vec4& color)
     }
 }
 
-void Texture::Fill(const Texture& from)
+void Texture::Fill(
+    const Texture &from)
 {
     int x = 0, y = 0;
     while (x < this->Width())
@@ -116,7 +137,10 @@ void Texture::Fill(const Texture& from)
     }
 }
 
-void Texture::FillAtPosition(const Texture& from, const glm::vec2& pos, bool expandBorder)
+void Texture::FillAtPosition(
+    const Texture &from,
+    const glm::vec2 &pos,
+    bool expandBorder)
 {
     if (pos.x > this->Width() || pos.y > this->Height()) return;
 
@@ -134,24 +158,29 @@ void Texture::FillAtPosition(const Texture& from, const glm::vec2& pos, bool exp
                 {
                     this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x), int(pos.y + y) - 1);
                     if (x == 0) this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x) - 1, int(pos.y + y) - 1);
-                    if (x == w-1) this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x) + 1, int(pos.y + y) - 1);
+                    if (x == w - 1) this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x) + 1, int(pos.y + y) - 1);
                 }
-                else if (y == h-1)
+                else if (y == h - 1)
                 {
                     this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x), int(pos.y + y + 1));
                     if (x == 0) this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x) - 1, int(pos.y + y) + 1);
-                    if (x == w-1) this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x) + 1, int(pos.y + y) + 1);
+                    if (x == w - 1) this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x) + 1, int(pos.y + y) + 1);
                 }
                 if (x == 0)
                     this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x) - 1, int(pos.y + y));
-                else if (x == w-1)
+                else if (x == w - 1)
                     this->SetPixelAt(from.PixelAt(x, y), int(pos.x + x) + 1, int(pos.y + y));
             }
         }
     }
 }
 
-void Texture::SetData(int w, int h, int bpp, unsigned char* data, bool repeat)
+void Texture::SetData(
+    int w,
+    int h,
+    int bpp,
+    unsigned char *data,
+    bool repeat)
 {
     int dataSize = w * h * bpp;
 
@@ -163,7 +192,7 @@ void Texture::SetData(int w, int h, int bpp, unsigned char* data, bool repeat)
         this->_repeat = repeat;
 
         if (this->_data != nullptr)
-            delete []this->_data;
+            delete[] this->_data;
         this->_data = 0;
 
         this->_data = new unsigned char[dataSize];
@@ -174,16 +203,21 @@ void Texture::SetData(int w, int h, int bpp, unsigned char* data, bool repeat)
     }
 }
 
-void Texture::SetName(const std::string& name)
+void Texture::SetName(
+    const std::string &name)
 {
     this->_name = name;
 }
 
-void Texture::SetDimentions(int width, int height, int bpp, unsigned int format)
+void Texture::SetDimentions(
+    int width,
+    int height,
+    int bpp,
+    unsigned int format)
 {
     if (this->_data != nullptr)
     {
-        delete []this->_data;
+        delete[] this->_data;
         this->_data = nullptr;
     }
 
@@ -196,29 +230,30 @@ void Texture::SetDimentions(int width, int height, int bpp, unsigned int format)
         this->_data = new unsigned char[dataSize];
 }
 
-void Texture::CorrectGamma(float gamma)
+void Texture::CorrectGamma(
+    float gamma)
 {
     // Only images with rgb colors
     if (this->_bpp < 3)
         return;
 
-    for(int j = 0; j < (this->_width * this->_height); ++j)
+    for (int j = 0; j < (this->_width * this->_height); ++j)
     {
         float r, g, b;
         r = this->_data[j * this->_bpp + 0];
         g = this->_data[j * this->_bpp + 1];
         b = this->_data[j * this->_bpp + 2];
 
-        r *= gamma/255.0f;
-        g *= gamma/255.0f;
-        b *= gamma/255.0f;
+        r *= gamma / 255.0f;
+        g *= gamma / 255.0f;
+        b *= gamma / 255.0f;
 
         // find the value to scale back up
         float scale = 1.0f;
         float temp;
-        if(r > 1.0f && (temp = (1.0f/r)) < scale) scale = temp;
-        if(g > 1.0f && (temp = (1.0f/g)) < scale) scale = temp;
-        if(b > 1.0f && (temp = (1.0f/b)) < scale) scale = temp;
+        if (r > 1.0f && (temp = (1.0f / r)) < scale) scale = temp;
+        if (g > 1.0f && (temp = (1.0f / g)) < scale) scale = temp;
+        if (b > 1.0f && (temp = (1.0f / b)) < scale) scale = temp;
 
         // scale up color values
         scale *= 255.0f;
@@ -233,7 +268,7 @@ void Texture::CorrectGamma(float gamma)
     }
 }
 
-const std::string& Texture::Name() const
+const std::string &Texture::Name() const
 {
     return this->_name;
 }
@@ -258,7 +293,7 @@ int Texture::DataSize() const
     return this->_width * this->_height * this->_bpp;
 }
 
-unsigned char* Texture::Data()
+unsigned char *Texture::Data()
 {
     return this->_data;
 }

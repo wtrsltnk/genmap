@@ -2,7 +2,7 @@
 #define	_HLTEXTURE_H_
 
 #include <string>
-#include "include/glmath.h"
+#include <glm/glm.hpp>
 
 namespace valve
 {

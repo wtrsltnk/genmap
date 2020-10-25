@@ -2,18 +2,19 @@
 #define GLSHADER_H
 
 #include "glad/glad.h"
+//#include <glmath.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 #include <string>
 #include <vector>
-#include "glmath.h"
 
 class ShaderType
 {
 public:
-    ShaderType()
-    { }
+    ShaderType() = default;
 
-    virtual ~ShaderType()
-    { }
+    virtual ~ShaderType() = default;
 
     GLuint id() const
     {
@@ -32,33 +33,31 @@ public:
         if (defaultShader == 0)
         {
             std::string const vshader(
-                        "#version 150\n"
+                "#version 150\n"
 
-                        "in vec3 vertex;"
-                        "in vec4 color;"
+                "in vec3 vertex;"
+                "in vec4 color;"
 
-                        "uniform mat4 u_matrix;"
+                "uniform mat4 u_matrix;"
 
-                        "out vec4 f_color;"
+                "out vec4 f_color;"
 
-                        "void main()"
-                        "{"
-                        "    gl_Position = u_matrix * vec4(vertex.xyz, 1.0);"
-                        "    f_color = color;"
-                        "}"
-                        );
+                "void main()"
+                "{"
+                "    gl_Position = u_matrix * vec4(vertex.xyz, 1.0);"
+                "    f_color = color;"
+                "}");
 
             std::string const fshader(
-                        "#version 150\n"
+                "#version 150\n"
 
-                        "in vec4 f_color;"
-                        "out vec4 color;"
+                "in vec4 f_color;"
+                "out vec4 color;"
 
-                        "void main()"
-                        "{"
-                        "   color = f_color;"
-                        "}"
-                        );
+                "void main()"
+                "{"
+                "   color = f_color;"
+                "}");
 
             if (compile(vshader, fshader))
             {
@@ -151,7 +150,7 @@ public:
 
     void setupAttributes() const
     {
-        auto vertexSize = sizeof(glm::vec3) + sizeof(glm::vec4);
+        auto vertexSize = static_cast<GLsizei>(sizeof(glm::vec3) + sizeof(glm::vec4));
 
         auto vertexAttrib = glGetAttribLocation(_shaderId, _vertexAttributeName.c_str());
         glVertexAttribPointer(
@@ -170,7 +169,7 @@ public:
             GL_FLOAT,
             GL_FALSE,
             vertexSize,
-            reinterpret_cast<const GLvoid*>(sizeof(glm::vec3)));
+            reinterpret_cast<const GLvoid *>(sizeof(glm::vec3)));
 
         glEnableVertexAttribArray(GLuint(colorAttrib));
     }
@@ -182,7 +181,6 @@ private:
     std::string _matrixUniformName = "u_matrix";
     std::string _vertexAttributeName = "vertex";
     std::string _colorAttributeName = "color";
-
 };
 
 #endif // GLSHADER_H

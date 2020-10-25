@@ -2,7 +2,8 @@
 #define GLBUFFER_H
 
 #include "glad/glad.h"
-#include "glmath.h"
+#include "glshader.h"
+#include <glm/glm.hpp>
 #include <map>
 #include <vector>
 
@@ -16,21 +17,20 @@ public:
 class BufferType
 {
 public:
-    BufferType()
-    { }
+    BufferType() = default;
 
-    virtual ~BufferType() { }
+    virtual ~BufferType() = default;
 
-    std::vector<VertexType>& verts()
+    std::vector<VertexType> &verts()
     {
         return _verts;
     }
 
-    BufferType& operator << (
+    BufferType &operator<<(
         VertexType const &vertex)
     {
         _verts.push_back(vertex);
-        _vertexCount = _verts.size();
+        _vertexCount = static_cast<GLsizei>(_verts.size());
 
         return *this;
     }
@@ -53,17 +53,22 @@ public:
         return _vertexCount;
     }
 
-    BufferType& vertex(
+    int faceCount() const
+    {
+        return static_cast<int>(_faces.size());
+    }
+
+    BufferType &vertex(
         glm::vec3 const &position)
     {
-        _verts.push_back(VertexType({ position, _nextColor }));
+        _verts.push_back(VertexType({position, _nextColor}));
 
-        _vertexCount = _verts.size();
+        _vertexCount = static_cast<GLsizei>(_verts.size());
 
         return *this;
     }
 
-    BufferType& color(
+    BufferType &color(
         glm::vec4 const &color)
     {
         _nextColor = color;
@@ -82,7 +87,7 @@ public:
         ShaderType &shader)
     {
         _drawMode = mode;
-        _vertexCount = _verts.size();
+        _vertexCount = static_cast<GLsizei>(_verts.size());
 
         glGenVertexArrays(1, &_vertexArrayId);
         glGenBuffers(1, &_vertexBufferId);
@@ -95,12 +100,12 @@ public:
             GLsizeiptr(_verts.size() * sizeof(VertexType)),
             0,
             GL_STATIC_DRAW);
-        
+
         glBufferSubData(
             GL_ARRAY_BUFFER,
             0,
             GLsizeiptr(_verts.size() * sizeof(VertexType)),
-            reinterpret_cast<const GLvoid*>(&_verts[0]));
+            reinterpret_cast<const GLvoid *>(&_verts[0]));
 
         shader.setupAttributes();
 
@@ -143,7 +148,7 @@ public:
             _vertexArrayId = 0;
         }
     }
-    
+
 private:
     int _vertexCount = 0;
     std::vector<VertexType> _verts;
@@ -152,7 +157,6 @@ private:
     unsigned int _vertexBufferId = 0;
     GLenum _drawMode = GL_TRIANGLES;
     std::map<int, int> _faces;
-
 };
 
 #endif // GLBUFFER_H

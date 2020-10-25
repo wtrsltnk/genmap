@@ -1,8 +1,3 @@
-/*
- * 
- */
-
-#define EXAMPLE_NAME "genmap"
 
 #define APPLICATION_IMPLEMENTATION
 #include "include/application.h"
@@ -11,18 +6,14 @@
 #include "include/glshader.h"
 
 #include "include/glbuffer.h"
-#include "include/glmath.h"
-#include <iostream>
 
-static struct
-{
-    std::string filename;
-    valve::hl1::BspAsset *bspAsset = nullptr;
-    glm::mat4 matrix;
-    glm::vec3 position;
-    ShaderType shader;
-    BufferType vertexBuffer;
-} State;
+//#define GLMATH_IMPLEMENTATION
+//#include <glmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <iostream>
+#include <spdlog/spdlog.h>
 
 class FileSystem :
     public valve::IFileSystem
@@ -50,8 +41,8 @@ bool FileSystem::LoadFile(
 
     if (!file.is_open())
     {
-        std::cout << "File not found:\n"
-                  << "\t" << filename << "\n";
+        spdlog::error("File not found: {0}", filename);
+
         return false;
     }
 
@@ -66,101 +57,202 @@ bool FileSystem::LoadFile(
     return true;
 }
 
-bool Startup()
+void OpenGLMessageCallback(
+    unsigned source,
+    unsigned type,
+    unsigned id,
+    unsigned severity,
+    int length,
+    const char *message,
+    const void *userParam)
 {
-    glClearColor(0.0f, 0.8f, 1.0f, 1.0f);
+    (void)source;
+    (void)type;
+    (void)id;
+    (void)length;
+    (void)userParam;
 
-    State.shader.compileDefaultShader();
-
-    FileSystem fs;
-    State.bspAsset = new valve::hl1::BspAsset(&fs);
-    if (!State.bspAsset->Load(State.filename))
+    switch (severity)
     {
-        delete State.bspAsset;
-        State.bspAsset = nullptr;
-
-        State.vertexBuffer
-            .color(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f))
-            .vertex(glm::vec3(-10.0f, -10.0f, 0.0f)) // mint
-            .color(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f))
-            .vertex(glm::vec3(-10.0f, 10.0f, 0.0f)) // geel
-            .color(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f))
-            .vertex(glm::vec3(10.0f, 10.0f, 0.0f)) // paars
-            .color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f))
-            .vertex(glm::vec3(10.0f, -10.0f, 0.0f)); // wit
-
-        State.vertexBuffer
-            .setup(GL_TRIANGLE_FAN, State.shader);
+        case GL_DEBUG_SEVERITY_HIGH:
+            spdlog::critical(message);
+            return;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            spdlog::error(message);
+            return;
+        case GL_DEBUG_SEVERITY_LOW:
+            spdlog::warn(message);
+            return;
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            spdlog::trace(message);
+            return;
     }
-    else
+
+    spdlog::debug("Unknown severity level!");
+    spdlog::debug(message);
+}
+
+class Test
+{
+public:
+    bool Startup()
     {
-        for (auto face : State.bspAsset->_faces)
+        spdlog::debug("Startup()");
+
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(OpenGLMessageCallback, nullptr);
+
+        glDebugMessageControl(
+            GL_DONT_CARE,
+            GL_DONT_CARE,
+            GL_DEBUG_SEVERITY_NOTIFICATION,
+            0,
+            NULL,
+            GL_FALSE);
+
+        glClearColor(0.0f, 0.8f, 1.0f, 1.0f);
+
+        shader.compileDefaultShader();
+
+        FileSystem fs;
+        bspAsset = new valve::hl1::BspAsset(&fs);
+        if (!bspAsset->Load(filename))
         {
-            for (int v = face.firstVertex; v < face.firstVertex + face.vertexCount; v++)
+            delete bspAsset;
+            bspAsset = nullptr;
+
+            vertexBuffer
+                .color(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f))
+                .vertex(glm::vec3(-10.0f, -10.0f, 0.0f)) // mint
+                .color(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f))
+                .vertex(glm::vec3(-10.0f, 10.0f, 0.0f)) // geel
+                .color(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f))
+                .vertex(glm::vec3(10.0f, 10.0f, 0.0f)) // paars
+                .color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f))
+                .vertex(glm::vec3(10.0f, -10.0f, 0.0f)); // wit
+
+            vertexBuffer
+                .setup(GL_TRIANGLE_FAN, shader);
+        }
+        else
+        {
+            for (auto face : bspAsset->_faces)
             {
-                auto &vertex = State.bspAsset->_vertices[v];
-                State.vertexBuffer
-                    .color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f))
-                    .vertex(glm::vec3(vertex.position));
+                for (int v = face.firstVertex; v < face.firstVertex + face.vertexCount; v++)
+                {
+                    auto &vertex = bspAsset->_vertices[v];
+                    vertexBuffer
+                        .color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f))
+                        .vertex(glm::vec3(vertex.position));
+                }
+
+                vertexBuffer
+                    .addFace(face.firstVertex, face.vertexCount);
             }
 
-            State.vertexBuffer
-                .addFace(face.firstVertex, face.vertexCount);
+            vertexBuffer
+                .setup(GL_TRIANGLE_FAN, shader);
         }
 
-        State.vertexBuffer
-            .setup(GL_TRIANGLE_FAN, State.shader);
+        spdlog::debug("loaded {0} faces", vertexBuffer.faceCount());
+        spdlog::debug("loaded {0} vertices", vertexBuffer.vertexCount());
+
+        return true;
     }
 
-    return true;
-}
-
-void Resize(
-    int width,
-    int height)
-{
-    glViewport(0, 0, width, height);
-
-    // Calculate the projection and view matrix
-    State.matrix = glm::perspective(glm::radians(90.0f), float(width) / float(height), 0.1f, 4096.0f) *
-                   glm::lookAt(State.position + glm::vec3(12.0f, 0.0f, 0.0f), State.position, glm::vec3(0.0f, 0.0f, 1.0f));
-}
-
-void Destroy()
-{
-    if (State.bspAsset != nullptr)
+    void Resize(
+        int width,
+        int height)
     {
-        delete State.bspAsset;
-        State.bspAsset = nullptr;
+        glViewport(0, 0, width, height);
+
+        // Calculate the projection and view matrix
+        matrix = glm::perspective(glm::radians(120.0f), float(width) / float(height), 0.1f, 4096.0f);
+
+        spdlog::debug("recalculated matrx: {0}", glm::to_string(matrix));
     }
-}
 
-bool Tick()
-{
-    glClear(GL_COLOR_BUFFER_BIT);
+    void Destroy()
+    {
+        if (bspAsset != nullptr)
+        {
+            delete bspAsset;
+            bspAsset = nullptr;
+        }
+    }
 
-    // Select shader
-    State.shader.use();
+    std::chrono::milliseconds::rep _lastTime;
 
-    // Upload projection and view matrix into shader
-    State.shader.setupMatrices(State.matrix);
+    bool Tick(
+        std::chrono::milliseconds::rep time,
+        const struct InputState &inputState)
+    {
+        const float speed = 1.0f;
+        float diff = float(time - _lastTime);
 
-    // Render vertex buffer with selected shader
-    State.vertexBuffer.render();
+        if (inputState.KeyboardButtonStates[KeyboardButtons::KeyLeft])
+        {
+            position.y -= (speed * diff);
+        }
+        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyRight])
+        {
+            position.y += (speed * diff);
+        }
+        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyUp])
+        {
+            position.x -= (speed * diff);
+        }
+        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyDown])
+        {
+            position.x += (speed * diff);
+        }
 
-    return true; // to keep running
-}
+        _lastTime = time;
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Select shader
+        shader.use();
+
+        auto m = matrix * glm::lookAt(position + glm::vec3(12.0f, 0.0f, 0.0f), position, glm::vec3(0.0f, 0.0f, 1.0f));
+
+        // Upload projection and view matrix into shader
+        shader.setupMatrices(m);
+
+        // Render vertex buffer with selected shader
+        vertexBuffer.render();
+
+        return true; // to keep running
+    }
+
+    void SetFilename(const char *fn)
+    {
+        filename = fn;
+    }
+
+private:
+    std::string filename;
+    valve::hl1::BspAsset *bspAsset = nullptr;
+    glm::mat4 matrix = glm::mat4(1.0f);
+    glm::vec3 position = glm::vec3(0.0f);
+    ShaderType shader;
+    BufferType vertexBuffer;
+};
 
 int main(
     int argc,
     char *argv[])
 {
+    spdlog::set_level(spdlog::level::debug); // Set global log level to debug
+
+    Test t;
+
     if (argc > 1)
     {
-        State.filename = argv[1];
+        spdlog::debug("loading map {0}", argv[1]);
+        t.SetFilename(argv[1]);
     }
 
-    auto app = Application::Create(Startup, Resize, Destroy);
-
-    return app->Run(Tick);
+    return Application::Run<Test>(t);
 }

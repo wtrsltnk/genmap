@@ -2,15 +2,15 @@
 
 #include <algorithm>
 #include <cctype>
+#include <spdlog/spdlog.h>
 #include <sstream>
-#include <iostream>
 
 using namespace valve::hl1;
 
 WadAsset::WadAsset(
     IFileSystem *fs)
     : Asset(fs)
-{ }
+{}
 
 WadAsset::~WadAsset()
 {
@@ -18,7 +18,7 @@ WadAsset::~WadAsset()
     {
         if (_loadedLumps[i] != nullptr)
         {
-            delete [](_loadedLumps[i]);
+            delete[](_loadedLumps[i]);
             _loadedLumps[i] = nullptr;
         }
     }
@@ -30,7 +30,7 @@ WadAsset::~WadAsset()
 }
 
 bool WadAsset::Load(
-    const std::string& filename)
+    const std::string &filename)
 {
     _header.lumpsCount = 0;
     _header.lumpsOffset = 0;
@@ -41,7 +41,7 @@ bool WadAsset::Load(
     {
         return false;
     }
-    
+
     if (_file.tellg() == 0)
     {
         _file.close();
@@ -49,24 +49,24 @@ bool WadAsset::Load(
     }
 
     _file.seekg(0, std::ios::beg);
-    _file.read((char*)&_header, sizeof(tWADHeader));
+    _file.read((char *)&_header, sizeof(tWADHeader));
 
     if (std::string(_header.signature, 4) != HL1_WAD_SIGNATURE)
     {
         _file.close();
         return false;
     }
-    
+
     _lumps = new tWADLump[_header.lumpsCount];
     _file.seekg(_header.lumpsOffset, std::ios::beg);
-    _file.read((char*)_lumps, _header.lumpsCount * sizeof(tWADLump));
+    _file.read((char *)_lumps, _header.lumpsCount * sizeof(tWADLump));
 
     _loadedLumps = new byteptr[_header.lumpsCount];
     for (int i = 0; i < _header.lumpsCount; i++)
     {
         _loadedLumps[i] = nullptr;
     }
-    
+
     return true;
 }
 
@@ -76,17 +76,15 @@ bool WadAsset::IsLoaded() const
 }
 
 bool icasecmp(
-    const std::string& l,
-    const std::string& r)
+    const std::string &l,
+    const std::string &r)
 {
-    return l.size() == r.size()
-        && std::equal(l.cbegin(), l.cend(), r.cbegin(),
-            [](std::string::value_type l1, std::string::value_type r1)
-                { return std::toupper(l1) == std::toupper(r1); });
+    return l.size() == r.size() && std::equal(l.cbegin(), l.cend(), r.cbegin(),
+                                              [](std::string::value_type l1, std::string::value_type r1) { return std::toupper(l1) == std::toupper(r1); });
 }
 
 int WadAsset::IndexOf(
-    const std::string& name) const
+    const std::string &name) const
 {
     for (int l = 0; l < _header.lumpsCount; ++l)
         if (icasecmp(name, _lumps[l].name))
@@ -105,14 +103,14 @@ const valve::byteptr WadAsset::LumpData(
     {
         _loadedLumps[index] = new byte[_lumps[index].size];
         _file.seekg(_lumps[index].offset, std::ios::beg);
-        _file.read((char*)_loadedLumps[index], _lumps[index].size);
+        _file.read((char *)_loadedLumps[index], _lumps[index].size);
     }
 
     return _loadedLumps[index];
 }
 
 std::vector<std::string> split(
-    const std::string& subject,
+    const std::string &subject,
     const char delim = '\n')
 {
     std::vector<std::string> result;
@@ -126,25 +124,25 @@ std::vector<std::string> split(
 }
 
 // Answer from Stackoverflow: http://stackoverflow.com/a/9670795
-template<class Stream, class Iterator>
+template <class Stream, class Iterator>
 void join(
-    Stream& s,
+    Stream &s,
     Iterator first,
     Iterator last,
-    char const* delim = "\n")
+    char const *delim = "\n")
 {
-    if(first >= last)
+    if (first >= last)
         return;
 
     s << *first++;
 
-    for(; first != last; ++first)
+    for (; first != last; ++first)
         s << delim << *first;
 }
 
-std::vector<WadAsset*> WadAsset::LoadWads(
-    const std::string& wads,
-    const std::string& bspLocation,
+std::vector<WadAsset *> WadAsset::LoadWads(
+    const std::string &wads,
+    const std::string &bspLocation,
     IFileSystem *fs)
 {
     std::string tmp = bspLocation;
@@ -172,22 +170,22 @@ std::vector<WadAsset*> WadAsset::LoadWads(
         hints.push_back(s.str());
     }
 
-    std::vector<WadAsset*> result;
+    std::vector<WadAsset *> result;
 
     std::istringstream f(wads);
     std::string s;
     while (getline(f, s, ';'))
     {
         std::string found = WadAsset::FindWad(s, hints);
-        WadAsset* wad = new WadAsset(fs);
-        
+        WadAsset *wad = new WadAsset(fs);
+
         if (wad->Load(found))
         {
             result.push_back(wad);
         }
         else
         {
-            std::cout << "Unable to load wad files @ " << found << "\n";
+            spdlog::error("Unable to load wad files @ {0}", found);
             delete wad;
         }
     }
@@ -196,8 +194,8 @@ std::vector<WadAsset*> WadAsset::LoadWads(
 }
 
 std::string WadAsset::FindWad(
-    const std::string& wad,
-    const std::vector<std::string>& hints)
+    const std::string &wad,
+    const std::vector<std::string> &hints)
 {
     std::string tmp = wad;
     std::replace(tmp.begin(), tmp.end(), '/', '\\');
@@ -227,11 +225,11 @@ std::string WadAsset::FindWad(
 }
 
 void WadAsset::UnloadWads(
-    std::vector<WadAsset*>& wads)
+    std::vector<WadAsset *> &wads)
 {
     while (wads.empty() == false)
     {
-        WadAsset* wad = wads.back();
+        WadAsset *wad = wads.back();
         wads.pop_back();
         delete wad;
     }

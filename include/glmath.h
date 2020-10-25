@@ -4,7 +4,7 @@
 #include <cmath>
 #include <sstream>
 
-namespace glm
+namespace glmath
 {
 
 struct vec2
@@ -191,7 +191,7 @@ vec3 to_vec3(vec4 const &v4);
 
 #ifdef GLMATH_IMPLEMENTATION
 
-namespace glm
+namespace glmath
 {
 
 vec2 operator + (vec2 const &v1, vec2 const &v2)

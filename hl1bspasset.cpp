@@ -2,7 +2,7 @@
 
 #include "hl1bsptypes.h"
 #include "stb_rect_pack.h"
-#include <iostream>
+#include <spdlog/spdlog.h>
 #include <sstream>
 
 using namespace valve::hl1;
@@ -258,7 +258,7 @@ bool BspAsset::LoadFacesWithLightmaps(
             v.position = _verticesData[_edgeData[ei < 0 ? -ei : ei].vertex[ei < 0 ? 1 : 0]].point;
 
             // Copy the normal from the plane
-            v.normal = glm::to_vec3(out.plane);
+            v.normal = glm::vec3(out.plane);
 
             // Reset the bone so its not used
             v.bone = -1;
@@ -390,7 +390,7 @@ bool BspAsset::LoadTextures(
         }
         else
         {
-            std::cout << "Texture \"" << miptex->name << "\" not found" << std::endl;
+            spdlog::error("Texture \"{0}\" not found", miptex->name);
             tex->DefaultTexture();
         }
         textures.push_back(tex);
