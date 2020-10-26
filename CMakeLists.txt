@@ -26,7 +26,6 @@ add_executable(genmap
     include/application.h
     include/glad/glad.h
     include/glbuffer.h
-    include/glmath.h
     include/glshader.h
     main.cpp
     stb_rect_pack.cpp
