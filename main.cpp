@@ -10,6 +10,7 @@
 //#define GLMATH_IMPLEMENTATION
 //#include <glmath.h>
 
+#include "camera.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
@@ -57,6 +58,48 @@ bool FileSystem::LoadFile(
     return true;
 }
 
+unsigned int UploadToGl(
+    valve::Texture *texture)
+{
+    GLuint format = GL_RGB;
+    GLuint glIndex = 0;
+
+    switch (texture->Bpp())
+    {
+        case 3:
+            format = GL_RGB;
+            break;
+        case 4:
+            format = GL_RGBA;
+            break;
+    }
+
+    glGenTextures(1, &glIndex);
+    glBindTexture(GL_TEXTURE_2D, glIndex);
+
+    if (texture->Repeat())
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    //    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, texture->Width(), texture->Height(), 0, format, GL_UNSIGNED_BYTE, texture->Data());
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    return glIndex;
+}
+
 void OpenGLMessageCallback(
     unsigned source,
     unsigned type,
@@ -75,22 +118,31 @@ void OpenGLMessageCallback(
     switch (severity)
     {
         case GL_DEBUG_SEVERITY_HIGH:
-            spdlog::critical(message);
+            spdlog::critical("{} - {}", source, message);
             return;
         case GL_DEBUG_SEVERITY_MEDIUM:
-            spdlog::error(message);
+            spdlog::error("{} - {}", source, message);
             return;
         case GL_DEBUG_SEVERITY_LOW:
-            spdlog::warn(message);
+            spdlog::warn("{} - {}", source, message);
             return;
         case GL_DEBUG_SEVERITY_NOTIFICATION:
-            spdlog::trace(message);
+            spdlog::trace("{} - {}", source, message);
             return;
     }
 
     spdlog::debug("Unknown severity level!");
     spdlog::debug(message);
 }
+
+class FaceType
+{
+public:
+    GLuint firstVertex;
+    GLuint vertexCount;
+    GLuint textureIndex;
+    GLuint lightmapIndex;
+};
 
 class Test
 {
@@ -123,39 +175,54 @@ public:
             bspAsset = nullptr;
 
             vertexBuffer
-                .color(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f))
                 .vertex(glm::vec3(-10.0f, -10.0f, 0.0f)) // mint
-                .color(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f))
-                .vertex(glm::vec3(-10.0f, 10.0f, 0.0f)) // geel
-                .color(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f))
-                .vertex(glm::vec3(10.0f, 10.0f, 0.0f)) // paars
-                .color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f))
+                .vertex(glm::vec3(-10.0f, 10.0f, 0.0f))  // geel
+                .vertex(glm::vec3(10.0f, 10.0f, 0.0f))   // paars
                 .vertex(glm::vec3(10.0f, -10.0f, 0.0f)); // wit
 
             vertexBuffer
-                .setup(GL_TRIANGLE_FAN, shader);
+                .setup(shader);
         }
         else
         {
-            for (auto face : bspAsset->_faces)
+            _lightmapIndices = std::vector<GLuint>(bspAsset->_lightMaps.size());
+            glActiveTexture(GL_TEXTURE1);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            for (size_t i = 0; i < bspAsset->_lightMaps.size(); i++)
+            {
+                _lightmapIndices[i] = UploadToGl(bspAsset->_lightMaps[i]);
+            }
+
+            _textureIndices = std::vector<GLuint>(bspAsset->_textures.size());
+            glActiveTexture(GL_TEXTURE0);
+            for (size_t i = 0; i < bspAsset->_textures.size(); i++)
+            {
+                _textureIndices[i] = UploadToGl(bspAsset->_textures[i]);
+            }
+
+            for (auto &face : bspAsset->_faces)
             {
                 for (int v = face.firstVertex; v < face.firstVertex + face.vertexCount; v++)
                 {
                     auto &vertex = bspAsset->_vertices[v];
+
                     vertexBuffer
-                        .color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f))
+                        .uvs(glm::vec4(vertex.texcoords[1].x, vertex.texcoords[1].y, vertex.texcoords[0].x, vertex.texcoords[0].y))
                         .vertex(glm::vec3(vertex.position));
                 }
 
-                vertexBuffer
-                    .addFace(face.firstVertex, face.vertexCount);
+                FaceType ft;
+                ft.firstVertex = face.firstVertex;
+                ft.vertexCount = face.vertexCount;
+                ft.lightmapIndex = face.lightmap;
+                ft.textureIndex = face.texture;
+                _faces.push_back(ft);
             }
 
             vertexBuffer
-                .setup(GL_TRIANGLE_FAN, shader);
+                .setup(shader);
         }
 
-        spdlog::debug("loaded {0} faces", vertexBuffer.faceCount());
         spdlog::debug("loaded {0} vertices", vertexBuffer.vertexCount());
 
         return true;
@@ -168,7 +235,7 @@ public:
         glViewport(0, 0, width, height);
 
         // Calculate the projection and view matrix
-        matrix = glm::perspective(glm::radians(120.0f), float(width) / float(height), 0.1f, 4096.0f);
+        matrix = glm::perspective(glm::radians(90.0f), float(width) / float(height), 0.1f, 4096.0f);
 
         spdlog::debug("recalculated matrx: {0}", glm::to_string(matrix));
     }
@@ -188,40 +255,70 @@ public:
         std::chrono::milliseconds::rep time,
         const struct InputState &inputState)
     {
-        const float speed = 1.0f;
+        const float speed = 0.25f;
         float diff = float(time - _lastTime);
 
-        if (inputState.KeyboardButtonStates[KeyboardButtons::KeyLeft])
+        if (inputState.KeyboardButtonStates[KeyboardButtons::KeyLeft] || inputState.KeyboardButtonStates[KeyboardButtons::KeyA])
         {
-            position.y -= (speed * diff);
+            _cam.MoveLeft(speed * diff);
         }
-        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyRight])
+        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyRight] || inputState.KeyboardButtonStates[KeyboardButtons::KeyD])
         {
-            position.y += (speed * diff);
+            _cam.MoveLeft(-speed * diff);
         }
-        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyUp])
+
+        if (inputState.KeyboardButtonStates[KeyboardButtons::KeyUp] || inputState.KeyboardButtonStates[KeyboardButtons::KeyW])
         {
-            position.x -= (speed * diff);
+            _cam.MoveForward(speed * diff);
         }
-        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyDown])
+        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyDown] || inputState.KeyboardButtonStates[KeyboardButtons::KeyS])
         {
-            position.x += (speed * diff);
+            _cam.MoveForward(-speed * diff);
+        }
+
+        static int lastPointerX = inputState.MousePointerPosition[0];
+        static int lastPointerY = inputState.MousePointerPosition[1];
+
+        int diffX = -(inputState.MousePointerPosition[0] - lastPointerX);
+        int diffY = -(inputState.MousePointerPosition[1] - lastPointerY);
+
+        lastPointerX = inputState.MousePointerPosition[0];
+        lastPointerY = inputState.MousePointerPosition[1];
+
+        if (inputState.MouseButtonStates[MouseButtons::LeftButton])
+        {
+            _cam.RotateZ(glm::radians(float(diffX) * 0.1f));
+            _cam.RotateX(glm::radians(float(diffY) * 0.1f));
         }
 
         _lastTime = time;
 
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
 
         // Select shader
         shader.use();
 
-        auto m = matrix * glm::lookAt(position + glm::vec3(12.0f, 0.0f, 0.0f), position, glm::vec3(0.0f, 0.0f, 1.0f));
-
         // Upload projection and view matrix into shader
-        shader.setupMatrices(m);
+        shader.setupMatrices(matrix * _cam.GetViewMatrix());
 
-        // Render vertex buffer with selected shader
-        vertexBuffer.render();
+        for (size_t i = 0; i < _faces.size(); i++)
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, _textureIndices[_faces[i].textureIndex]);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, _lightmapIndices[i]);
+            vertexBuffer.bind();
+
+            glDrawArrays(GL_TRIANGLE_FAN, _faces[i].firstVertex, _faces[i].vertexCount);
+        }
+
+        vertexBuffer.unbind();
 
         return true; // to keep running
     }
@@ -235,9 +332,13 @@ private:
     std::string filename;
     valve::hl1::BspAsset *bspAsset = nullptr;
     glm::mat4 matrix = glm::mat4(1.0f);
-    glm::vec3 position = glm::vec3(0.0f);
     ShaderType shader;
     BufferType vertexBuffer;
+    std::vector<GLuint> _textureIndices;
+    std::vector<GLuint> _lightmapIndices;
+    std::vector<FaceType> _faces;
+    std::map<GLuint, FaceType> _facesByLightmapAtlas;
+    Camera _cam;
 };
 
 int main(

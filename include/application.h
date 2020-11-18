@@ -500,246 +500,365 @@ LRESULT CALLBACK Win32Application::objectProc(
             switch (scancode)
             {
                 case 0x00B:
-                    _inputState.KeyboardButtonStates[Key0] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key0] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x002:
-                    _inputState.KeyboardButtonStates[Key1] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key1] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x003:
-                    _inputState.KeyboardButtonStates[Key2] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key2] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x004:
-                    _inputState.KeyboardButtonStates[Key3] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key3] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x005:
-                    _inputState.KeyboardButtonStates[Key4] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key4] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x006:
-                    _inputState.KeyboardButtonStates[Key5] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key5] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x007:
-                    _inputState.KeyboardButtonStates[Key6] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key6] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x008:
-                    _inputState.KeyboardButtonStates[Key7] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key7] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x009:
-                    _inputState.KeyboardButtonStates[Key8] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key8] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x00A:
-                    _inputState.KeyboardButtonStates[Key9] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[Key9] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x01E:
-                    _inputState.KeyboardButtonStates[KeyA] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyA] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x030:
-                    _inputState.KeyboardButtonStates[KeyB] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyB] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x02E:
-                    _inputState.KeyboardButtonStates[KeyC] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyC] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x020:
-                    _inputState.KeyboardButtonStates[KeyD] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyD] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x012:
-                    _inputState.KeyboardButtonStates[KeyE] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyE] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x021:
-                    _inputState.KeyboardButtonStates[KeyF] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x022:
-                    _inputState.KeyboardButtonStates[KeyG] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyG] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x023:
-                    _inputState.KeyboardButtonStates[KeyH] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyH] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x017:
-                    _inputState.KeyboardButtonStates[KeyI] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyI] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x024:
-                    _inputState.KeyboardButtonStates[KeyJ] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyJ] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x025:
-                    _inputState.KeyboardButtonStates[KeyK] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyK] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x026:
-                    _inputState.KeyboardButtonStates[KeyL] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyL] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x032:
-                    _inputState.KeyboardButtonStates[KeyM] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyM] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x031:
-                    _inputState.KeyboardButtonStates[KeyN] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyN] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x018:
-                    _inputState.KeyboardButtonStates[KeyO] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyO] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x019:
-                    _inputState.KeyboardButtonStates[KeyP] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyP] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x010:
-                    _inputState.KeyboardButtonStates[KeyQ] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyQ] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x013:
-                    _inputState.KeyboardButtonStates[KeyR] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyR] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x01F:
-                    _inputState.KeyboardButtonStates[KeyS] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyS] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x014:
-                    _inputState.KeyboardButtonStates[KeyT] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyT] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x016:
-                    _inputState.KeyboardButtonStates[KeyU] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyU] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x02F:
-                    _inputState.KeyboardButtonStates[KeyV] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyV] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x011:
-                    _inputState.KeyboardButtonStates[KeyW] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyW] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x02D:
-                    _inputState.KeyboardButtonStates[KeyX] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyX] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x015:
-                    _inputState.KeyboardButtonStates[KeyY] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyY] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x02C:
-                    _inputState.KeyboardButtonStates[KeyZ] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyZ] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
 
                 case 0x028:
-                    _inputState.KeyboardButtonStates[KeyApostrophe] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyApostrophe] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x02B:
-                    _inputState.KeyboardButtonStates[KeyBackslash] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyBackslash] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x033:
-                    _inputState.KeyboardButtonStates[KeyComma] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyComma] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x00D:
-                    _inputState.KeyboardButtonStates[KeyEqual] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyEqual] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x029:
-                    _inputState.KeyboardButtonStates[KeyGraveAccent] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyGraveAccent] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x01A:
-                    _inputState.KeyboardButtonStates[KeyLeftBracket] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyLeftBracket] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x00C:
-                    _inputState.KeyboardButtonStates[KeyMinus] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyMinus] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x034:
-                    _inputState.KeyboardButtonStates[KeyPeriod] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyPeriod] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x01B:
-                    _inputState.KeyboardButtonStates[KeyRightBracket] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyRightBracket] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x027:
-                    _inputState.KeyboardButtonStates[KeySemicolon] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeySemicolon] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x035:
-                    _inputState.KeyboardButtonStates[KeySlash] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeySlash] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x056:
-                    _inputState.KeyboardButtonStates[KeyWorld2] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyWorld2] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
 
                 case 0x00E:
-                    _inputState.KeyboardButtonStates[KeyBackspace] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyBackspace] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x153:
-                    _inputState.KeyboardButtonStates[KeyDelete] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyDelete] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x14F:
-                    _inputState.KeyboardButtonStates[KeyEnd] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyEnd] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x01C:
-                    _inputState.KeyboardButtonStates[KeyEnter] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyEnter] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x001:
-                    _inputState.KeyboardButtonStates[KeyEscape] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyEscape] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x147:
-                    _inputState.KeyboardButtonStates[KeyHome] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyHome] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x152:
-                    _inputState.KeyboardButtonStates[KeyInsert] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyInsert] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x15D:
-                    _inputState.KeyboardButtonStates[KeyMenu] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyMenu] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x151:
-                    _inputState.KeyboardButtonStates[KeyPageDown] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyPageDown] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x149:
-                    _inputState.KeyboardButtonStates[KeyPageUp] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyPageUp] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x045:
-                    _inputState.KeyboardButtonStates[KeyPause] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyPause] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x146:
-                    _inputState.KeyboardButtonStates[KeyPause] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyPause] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x039:
-                    _inputState.KeyboardButtonStates[KeySpace] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeySpace] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x00F:
-                    _inputState.KeyboardButtonStates[KeyTab] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyTab] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x03A:
-                    _inputState.KeyboardButtonStates[KeyCapsLock] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyCapsLock] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x145:
-                    _inputState.KeyboardButtonStates[KeyNumLock] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyNumLock] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x046:
-                    _inputState.KeyboardButtonStates[KeyScrollLock] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyScrollLock] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x03B:
-                    _inputState.KeyboardButtonStates[KeyF1] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF1] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x03C:
-                    _inputState.KeyboardButtonStates[KeyF2] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF2] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x03D:
-                    _inputState.KeyboardButtonStates[KeyF3] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF3] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x03E:
-                    _inputState.KeyboardButtonStates[KeyF4] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF4] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x03F:
-                    _inputState.KeyboardButtonStates[KeyF5] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF5] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x040:
-                    _inputState.KeyboardButtonStates[KeyF6] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF6] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x041:
-                    _inputState.KeyboardButtonStates[KeyF7] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF7] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x042:
-                    _inputState.KeyboardButtonStates[KeyF8] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF8] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x043:
-                    _inputState.KeyboardButtonStates[KeyF9] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF9] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x044:
-                    _inputState.KeyboardButtonStates[KeyF10] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF10] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x057:
-                    _inputState.KeyboardButtonStates[KeyF11] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF11] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x058:
-                    _inputState.KeyboardButtonStates[KeyF12] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF12] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x064:
-                    _inputState.KeyboardButtonStates[KeyF13] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF13] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x065:
-                    _inputState.KeyboardButtonStates[KeyF14] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF14] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x066:
-                    _inputState.KeyboardButtonStates[KeyF15] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF15] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x067:
-                    _inputState.KeyboardButtonStates[KeyF16] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF16] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x068:
-                    _inputState.KeyboardButtonStates[KeyF17] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF17] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x069:
-                    _inputState.KeyboardButtonStates[KeyF18] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF18] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x06A:
-                    _inputState.KeyboardButtonStates[KeyF19] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF19] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x06B:
-                    _inputState.KeyboardButtonStates[KeyF20] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF20] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x06C:
-                    _inputState.KeyboardButtonStates[KeyF21] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF21] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x06D:
-                    _inputState.KeyboardButtonStates[KeyF22] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF22] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x06E:
-                    _inputState.KeyboardButtonStates[KeyF23] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF23] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x076:
-                    _inputState.KeyboardButtonStates[KeyF24] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyF24] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x038:
-                    _inputState.KeyboardButtonStates[KeyLeftAlt] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyLeftAlt] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x01D:
-                    _inputState.KeyboardButtonStates[KeyLeftControl] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyLeftControl] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x02A:
-                    _inputState.KeyboardButtonStates[KeyLeftShift] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyLeftShift] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x15B:
-                    _inputState.KeyboardButtonStates[KeyLeftSuper] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyLeftSuper] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x137:
-                    _inputState.KeyboardButtonStates[KeyPrintScreen] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyPrintScreen] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x138:
-                    _inputState.KeyboardButtonStates[KeyRightAlt] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyRightAlt] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x11D:
-                    _inputState.KeyboardButtonStates[KeyRightControl] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyRightControl] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x036:
-                    _inputState.KeyboardButtonStates[KeyRightShift] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyRightShift] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x15C:
-                    _inputState.KeyboardButtonStates[KeyRightSuper] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyRightSuper] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x150:
-                    _inputState.KeyboardButtonStates[KeyDown] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyDown] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x14B:
-                    _inputState.KeyboardButtonStates[KeyLeft] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyLeft] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x14D:
-                    _inputState.KeyboardButtonStates[KeyRight] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyRight] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x148:
-                    _inputState.KeyboardButtonStates[KeyUp] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyUp] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
 
                 case 0x052:
-                    _inputState.KeyboardButtonStates[KeyKp0] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp0] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x04F:
-                    _inputState.KeyboardButtonStates[KeyKp1] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp1] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x050:
-                    _inputState.KeyboardButtonStates[KeyKp2] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp2] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x051:
-                    _inputState.KeyboardButtonStates[KeyKp3] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp3] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x04B:
-                    _inputState.KeyboardButtonStates[KeyKp4] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp4] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x04C:
-                    _inputState.KeyboardButtonStates[KeyKp5] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp5] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x04D:
-                    _inputState.KeyboardButtonStates[KeyKp6] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp6] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x047:
-                    _inputState.KeyboardButtonStates[KeyKp7] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp7] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x048:
-                    _inputState.KeyboardButtonStates[KeyKp8] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp8] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x049:
-                    _inputState.KeyboardButtonStates[KeyKp9] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKp9] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x04E:
-                    _inputState.KeyboardButtonStates[KeyKpAdd] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKpAdd] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x053:
-                    _inputState.KeyboardButtonStates[KeyKpDecimal] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKpDecimal] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x135:
-                    _inputState.KeyboardButtonStates[KeyKpDivide] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKpDivide] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x11C:
-                    _inputState.KeyboardButtonStates[KeyKpEnter] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKpEnter] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x059:
-                    _inputState.KeyboardButtonStates[KeyKpEqual] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKpEqual] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x037:
-                    _inputState.KeyboardButtonStates[KeyKpMultiply] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKpMultiply] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
                 case 0x04A:
-                    _inputState.KeyboardButtonStates[KeyKpSubtract] = (HIWORD(lParam) & KF_UP ? false : true); break;
+                    _inputState.KeyboardButtonStates[KeyKpSubtract] = (HIWORD(lParam) & KF_UP ? false : true);
+                    break;
             }
             break;
         }

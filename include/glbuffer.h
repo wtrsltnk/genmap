@@ -11,7 +11,7 @@ class VertexType
 {
 public:
     glm::vec3 pos;
-    glm::vec4 col;
+    glm::vec4 uvs;
 };
 
 class BufferType
@@ -35,43 +35,28 @@ public:
         return *this;
     }
 
-    void setDrawMode(
-        GLenum mode)
-    {
-        _drawMode = mode;
-    }
-
-    void addFace(
-        int start,
-        int count)
-    {
-        _faces.insert(std::make_pair(start, count));
-    }
-
     int vertexCount() const
     {
         return _vertexCount;
     }
 
-    int faceCount() const
-    {
-        return static_cast<int>(_faces.size());
-    }
-
     BufferType &vertex(
         glm::vec3 const &position)
     {
-        _verts.push_back(VertexType({position, _nextColor}));
+        VertexType v;
+        v.pos = position;
+        v.uvs = _nextUvs;
+        _verts.push_back(v);
 
         _vertexCount = static_cast<GLsizei>(_verts.size());
 
         return *this;
     }
 
-    BufferType &color(
-        glm::vec4 const &color)
+    BufferType &uvs(
+        glm::vec4 const &uvs)
     {
-        _nextColor = color;
+        _nextUvs = uvs;
 
         return *this;
     }
@@ -79,14 +64,6 @@ public:
     bool setup(
         ShaderType &shader)
     {
-        return setup(_drawMode, shader);
-    }
-
-    bool setup(
-        GLenum mode,
-        ShaderType &shader)
-    {
-        _drawMode = mode;
         _vertexCount = static_cast<GLsizei>(_verts.size());
 
         glGenVertexArrays(1, &_vertexArrayId);
@@ -107,7 +84,7 @@ public:
             GLsizeiptr(_verts.size() * sizeof(VertexType)),
             reinterpret_cast<const GLvoid *>(&_verts[0]));
 
-        shader.setupAttributes();
+        shader.setupAttributes(sizeof(VertexType));
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -117,20 +94,13 @@ public:
         return true;
     }
 
-    void render()
+    void bind()
     {
         glBindVertexArray(_vertexArrayId);
-        if (_faces.empty())
-        {
-            glDrawArrays(_drawMode, 0, _vertexCount);
-        }
-        else
-        {
-            for (auto pair : _faces)
-            {
-                glDrawArrays(_drawMode, pair.first, pair.second);
-            }
-        }
+    }
+
+    void unbind()
+    {
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
@@ -152,11 +122,9 @@ public:
 private:
     int _vertexCount = 0;
     std::vector<VertexType> _verts;
-    glm::vec4 _nextColor;
+    glm::vec4 _nextUvs;
     unsigned int _vertexArrayId = 0;
     unsigned int _vertexBufferId = 0;
-    GLenum _drawMode = GL_TRIANGLES;
-    std::map<int, int> _faces;
 };
 
 #endif // GLBUFFER_H

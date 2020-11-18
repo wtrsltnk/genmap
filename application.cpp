@@ -1,4 +1,4 @@
-//#include "include/application.h"
+#include "include/application.h"
 
 //#include "glad.c"
 

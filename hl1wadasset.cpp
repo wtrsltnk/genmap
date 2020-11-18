@@ -93,7 +93,7 @@ int WadAsset::IndexOf(
     return -1;
 }
 
-const valve::byteptr WadAsset::LumpData(
+valve::byteptr WadAsset::LumpData(
     int index)
 {
     if (index >= _header.lumpsCount || index < 0)

@@ -18,8 +18,8 @@ CPMAddPackage(
 )
 
 add_executable(genmap
-    application.cpp
     batchrenderer.cpp
+    camera.cpp
     hl1bspasset.cpp
     hl1wadasset.cpp
     hltexture.cpp

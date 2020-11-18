@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
 
@@ -35,28 +36,38 @@ public:
             std::string const vshader(
                 "#version 150\n"
 
-                "in vec3 vertex;"
-                "in vec4 color;"
+                "in vec3 a_vertex;"
+                "in vec4 a_texcoords;"
 
                 "uniform mat4 u_matrix;"
 
-                "out vec4 f_color;"
+                "out vec2 f_uv_tex;"
+                "out vec2 f_uv_light;"
 
                 "void main()"
                 "{"
-                "    gl_Position = u_matrix * vec4(vertex.xyz, 1.0);"
-                "    f_color = color;"
+                "    gl_Position = u_matrix * vec4(a_vertex.xyz, 1.0);"
+                "    f_uv_light = a_texcoords.xy;"
+                "    f_uv_tex = a_texcoords.zw;"
                 "}");
 
             std::string const fshader(
                 "#version 150\n"
 
-                "in vec4 f_color;"
+                "uniform sampler2D u_tex0;"
+                "uniform sampler2D u_tex1;"
+
+                "in vec2 f_uv_tex;"
+                "in vec2 f_uv_light;"
+
                 "out vec4 color;"
 
                 "void main()"
                 "{"
-                "   color = f_color;"
+                "    vec4 texel0, texel1;"
+                "    texel0 = texture2D(u_tex0, f_uv_tex);"
+                "    texel1 = texture2D(u_tex1, f_uv_light);"
+                "    color = texel0 * texel1;"
                 "}");
 
             if (compile(vshader, fshader))
@@ -95,7 +106,7 @@ public:
             glGetShaderiv(vertShader, GL_INFO_LOG_LENGTH, &logLength);
             std::vector<char> vertShaderError(static_cast<size_t>((logLength > 1) ? logLength : 1));
             glGetShaderInfoLog(vertShader, logLength, NULL, &vertShaderError[0]);
-            std::cerr << &vertShaderError[0] << std::endl;
+            spdlog::error("error compiling vertex shader: {}", vertShaderError.data());
 
             return false;
         }
@@ -111,7 +122,7 @@ public:
             glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &logLength);
             std::vector<char> fragShaderError(static_cast<size_t>((logLength > 1) ? logLength : 1));
             glGetShaderInfoLog(fragShader, logLength, NULL, &fragShaderError[0]);
-            std::cerr << &fragShaderError[0] << std::endl;
+            spdlog::error("error compiling fragment shader: {}", fragShaderError.data());
 
             return false;
         }
@@ -127,7 +138,7 @@ public:
             glGetProgramiv(_shaderId, GL_INFO_LOG_LENGTH, &logLength);
             std::vector<char> programError(static_cast<size_t>((logLength > 1) ? logLength : 1));
             glGetProgramInfoLog(_shaderId, logLength, NULL, &programError[0]);
-            std::cerr << &programError[0] << std::endl;
+            spdlog::error("error linking shader: {}", programError.data());
 
             return false;
         }
@@ -135,7 +146,7 @@ public:
         glDeleteShader(vertShader);
         glDeleteShader(fragShader);
 
-        _matrixUniformId = glGetUniformLocation(_shaderId, _matrixUniformName.c_str());
+        _matrixUniformId = glGetUniformLocation(_shaderId, "u_matrix");
 
         return true;
     }
@@ -148,11 +159,24 @@ public:
         glUniformMatrix4fv(_matrixUniformId, 1, false, glm::value_ptr(matrix));
     }
 
-    void setupAttributes() const
+    void setupAttributes(
+        GLsizei vertexSize) const
     {
-        auto vertexSize = static_cast<GLsizei>(sizeof(glm::vec3) + sizeof(glm::vec4));
+        glUseProgram(_shaderId);
 
-        auto vertexAttrib = glGetAttribLocation(_shaderId, _vertexAttributeName.c_str());
+        auto vertexAttrib = glGetAttribLocation(_shaderId, "a_vertex");
+        if (vertexAttrib < 0)
+        {
+            spdlog::error("failed to get attribute location for \"a_vertex\" ({})", vertexAttrib);
+            return;
+        }
+        auto texcoordsAttrib = glGetAttribLocation(_shaderId, "a_texcoords");
+        if (texcoordsAttrib < 0)
+        {
+            spdlog::error("failed to get attribute location for \"a_texcoords\" ({})", texcoordsAttrib);
+            return;
+        }
+
         glVertexAttribPointer(
             GLuint(vertexAttrib),
             sizeof(glm::vec3) / sizeof(float),
@@ -162,25 +186,26 @@ public:
 
         glEnableVertexAttribArray(GLuint(vertexAttrib));
 
-        auto colorAttrib = glGetAttribLocation(_shaderId, _colorAttributeName.c_str());
         glVertexAttribPointer(
-            GLuint(colorAttrib),
+            GLuint(texcoordsAttrib),
             sizeof(glm::vec4) / sizeof(float),
             GL_FLOAT,
             GL_FALSE,
             vertexSize,
             reinterpret_cast<const GLvoid *>(sizeof(glm::vec3)));
 
-        glEnableVertexAttribArray(GLuint(colorAttrib));
+        glEnableVertexAttribArray(GLuint(texcoordsAttrib));
+
+        auto textLocation = glGetUniformLocation(_shaderId, "u_tex0");
+        auto ligtmapLocation = glGetUniformLocation(_shaderId, "u_tex1");
+
+        glUniform1i(textLocation, 0);
+        glUniform1i(ligtmapLocation, 1);
     }
 
 private:
     GLuint _shaderId = 0;
     GLuint _matrixUniformId = 0;
-
-    std::string _matrixUniformName = "u_matrix";
-    std::string _vertexAttributeName = "vertex";
-    std::string _colorAttributeName = "color";
 };
 
 #endif // GLSHADER_H

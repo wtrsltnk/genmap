@@ -2,6 +2,7 @@
 
 #include "hl1bsptypes.h"
 #include "stb_rect_pack.h"
+#include <iostream>
 #include <spdlog/spdlog.h>
 #include <sstream>
 
@@ -189,14 +190,16 @@ std::vector<tBSPVisLeaf> BspAsset::LoadVisLeafs(
 
 bool BspAsset::LoadFacesWithLightmaps(
     std::vector<tFace> &faces,
-    std::vector<Texture *> &lightmaps,
+    std::vector<Texture *> &tempLightmaps,
     std::vector<tVertex> &vertices)
 {
-    // Temporary lightmap array for each face, these will be packed into an atlas later
-    Array<Texture> lightMaps;
-
     // Allocate the arrays for faces and lightmaps
-    lightMaps.Allocate(_faceData.count);
+    tempLightmaps.resize(_faceData.count);
+
+    Texture whiteTexture;
+    unsigned char data[8 * 8 * 3];
+    memset(data, 255, 8 * 8 * 3);
+    whiteTexture.SetData(8, 8, 3, data);
 
     std::vector<stbrp_rect> rects;
     for (int f = 0; f < _faceData.count; f++)
@@ -229,21 +232,23 @@ bool BspAsset::LoadFacesWithLightmaps(
         float min[2], max[2];
         CalculateSurfaceExtents(in, min, max);
 
+        tempLightmaps[f] = new Texture();
+
         // Skip the lightmaps for faces with special flags
         if (out.flags == 0)
         {
-            if (LoadLightmap(in, lightMaps[f], min, max))
+            if (!LoadLightmap(in, *tempLightmaps[f], min, max))
             {
-                stbrp_rect rect;
-                rect.id = f;
-                rect.w = lightMaps[f].Width() + 2;
-                rect.h = lightMaps[f].Height() + 2;
-                rects.push_back(rect);
+                spdlog::error("failed to load lightmap {}", f);
             }
         }
+        else
+        {
+            tempLightmaps[f]->CopyFrom(whiteTexture);
+        }
 
-        float lw = float(lightMaps[f].Width());
-        float lh = float(lightMaps[f].Height());
+        float lw = float(tempLightmaps[f]->Width());
+        float lh = float(tempLightmaps[f]->Height());
         float halfsizew = (min[0] + max[0]) / 2.0f;
         float halfsizeh = (min[1] + max[1]) / 2.0f;
 
@@ -277,55 +282,6 @@ bool BspAsset::LoadFacesWithLightmaps(
         }
         faces.push_back(out);
     }
-
-    // Pack the lightmaps into an atlas
-    while (rects.size() > 0)
-    {
-        // Setup one atlas texture (for now)
-        Texture *atlas = new Texture();
-        atlas->SetDimentions(512, 512, 3);
-        atlas->Fill(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
-
-        // pack the lightmap rects into one atlas
-        stbrp_context context = {0};
-        Array<stbrp_node> nodes(rects.size());
-        stbrp_init_target(&context, atlas->Width(), atlas->Height(), nodes, rects.size());
-        stbrp_pack_rects(&context, (stbrp_rect *)&rects[0], rects.size());
-
-        std::vector<stbrp_rect> nextrects;
-        for (auto rect = rects.begin(); rect != rects.end(); rect++)
-        {
-            // a reference to the loaded lightmapfrom the rect
-            if ((*rect).was_packed)
-            {
-                Texture &lm = lightMaps[faces[(*rect).id].lightmap];
-                // Copy the lightmap texture into the atlas
-                atlas->FillAtPosition(lm, glm::vec2((*rect).x + 1, (*rect).y + 1), true);
-                for (int vertexIndex = 0; vertexIndex < faces[(*rect).id].vertexCount; vertexIndex++)
-                {
-                    // Recalculate the lightmap texcoords for the atlas
-                    glm::vec2 &vec = vertices[faces[(*rect).id].firstVertex + vertexIndex].texcoords[1];
-                    vec.s = float((*rect).x + 1 + (float(lm.Width()) * vec.s)) / atlas->Width();
-                    vec.t = float((*rect).y + 1 + (float(lm.Height()) * vec.t)) / atlas->Height();
-                }
-
-                // Make sure we will use the (correct) atlas when we render
-                faces[(*rect).id].lightmap = lightmaps.size();
-            }
-            else
-            {
-                // When the lightmap was not packed into the atlas, we try for a next atlas
-                nextrects.push_back(*rect);
-            }
-        }
-
-        // upload the atlas with all its lightmap textures
-        lightmaps.push_back(atlas);
-        rects = nextrects;
-    }
-
-    // cleanup the temporary lightmap array
-    lightMaps.Delete();
 
     return true;
 }
