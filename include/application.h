@@ -329,9 +329,9 @@ bool Win32Application::Startup(
         GLint attribList[] =
             {
                 WGL_CONTEXT_MAJOR_VERSION_ARB,
-                3,
+                4,
                 WGL_CONTEXT_MINOR_VERSION_ARB,
-                3,
+                6,
                 WGL_CONTEXT_FLAGS_ARB,
                 0,
                 0,
@@ -340,7 +340,7 @@ bool Win32Application::Startup(
         _hRC = _pfnGlxCreateContext(_hDC, 0, attribList);
         if (_hRC == 0)
         {
-            Destroy("Failed to create modern opengl context (v3.3)");
+            Destroy("Failed to create modern opengl context (v4.6)");
             return false;
         }
     }
