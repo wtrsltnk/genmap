@@ -37,6 +37,8 @@ namespace valve
         void SetName(const std::string &_name);
         void SetDimentions(int _width, int _height, int _bpp = 3, unsigned int _format = -1);
 
+        void SetRepeat(bool repeat);
+
         void CorrectGamma(float gamma);
 
     private:

@@ -46,7 +46,7 @@ namespace valve
                 int index);
 
             int FaceFlags(
-                int index);
+                size_t index);
 
             // File format header
             tBSPHeader *_header;
@@ -69,7 +69,7 @@ namespace valve
             // These are parsed from the mapped data
             std::vector<tBSPEntity> _entities;
             std::vector<tBSPVisLeaf> _visLeafs;
-            Array<tModel> _models;
+            std::vector<tModel> _models;
             std::vector<Texture *> _textures;
             std::vector<Texture *> _lightMaps;
             std::vector<tVertex> _vertices;

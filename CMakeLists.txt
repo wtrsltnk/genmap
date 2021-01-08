@@ -17,12 +17,29 @@ CPMAddPackage(
   GIT_TAG 0.9.9.7
 )
 
+CPMAddPackage(
+  NAME EnTT
+  VERSION 3.1.1
+  GITHUB_REPOSITORY skypjack/entt
+  # EnTT's CMakeLists screws with configuration options
+  DOWNLOAD_ONLY True
+)
+
+if (EnTT_ADDED)
+  add_library(EnTT INTERFACE)
+  target_include_directories(EnTT INTERFACE ${EnTT_SOURCE_DIR}/src)
+endif()
+
 add_executable(genmap
     batchrenderer.cpp
     camera.cpp
+    entitycomponents.h
     hl1bspasset.cpp
+    hl1bspasset.h
     hl1wadasset.cpp
+    hl1wadasset.h
     hltexture.cpp
+    hltexture.h
     include/application.h
     include/glad/glad.h
     include/glbuffer.h
@@ -40,9 +57,11 @@ target_link_libraries(genmap
     ${OPENGL_LIBRARIES}
     glm
     spdlog
+    EnTT
     )
 
 target_compile_features(genmap
+    PRIVATE cxx_std_17
     PRIVATE cxx_auto_type
     PRIVATE cxx_nullptr
     PRIVATE cxx_range_for

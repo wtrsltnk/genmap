@@ -43,11 +43,15 @@ bool BspAsset::Load(
 
     Array<byte> entityData;
     if (LoadLump(data, entityData, HL1_BSP_ENTITYLUMP))
+    {
         _entities = BspAsset::LoadEntities(entityData);
+    }
 
     Array<byte> visibilityData;
     if (LoadLump(data, visibilityData, HL1_BSP_VISIBILITYLUMP))
+    {
         _visLeafs = BspAsset::LoadVisLeafs(visibilityData, _leafData, _modelData);
+    }
 
     std::vector<WadAsset *> wads;
     tBSPEntity *worldspawn = FindEntityByClassname("worldspawn");
@@ -55,6 +59,7 @@ bool BspAsset::Load(
     {
         wads = WadAsset::LoadWads(worldspawn->keyvalues["wad"], filename, _fs);
     }
+
     LoadTextures(_textures, wads);
     WadAsset::UnloadWads(wads);
 
@@ -63,6 +68,42 @@ bool BspAsset::Load(
     LoadModels();
 
     return true;
+}
+
+void SkipAllSpaceCharacters(
+    const valve::byte *&itr,
+    const valve::byte *end)
+{
+    while (itr[0] <= ' ' && itr != end)
+    {
+        itr++; // skip all space characters
+    }
+}
+
+void GetAllWithinQuotes(
+    std::string &value,
+    const valve::byte *&itr,
+    const valve::byte *end)
+{
+    itr++; // skip the quote
+    while (itr[0] != '\"' && itr != end)
+    {
+        value += (*itr++);
+    }
+
+    itr++; // skip the quote
+
+    SkipAllSpaceCharacters(itr, end);
+}
+
+void MoveToNextEntity(
+    const valve::byte *&itr,
+    const valve::byte *end)
+{
+    while (itr[0] != '{' && itr != end)
+    {
+        itr++; // skip to the next entity
+    }
 }
 
 std::vector<sBSPEntity> BspAsset::LoadEntities(
@@ -77,35 +118,29 @@ std::vector<sBSPEntity> BspAsset::LoadEntities(
     {
         tBSPEntity entity;
         itr++; // skip the bracket
-        while (itr[0] <= ' ' && itr != end)
-            itr++; // skip all space characters
+
+        SkipAllSpaceCharacters(itr, end);
+
         while (itr[0] != '}')
         {
             key = "";
             value = "";
 
-            itr++; // skip the quote
-            while (itr[0] != '\"' && itr != end)
-                key += (*itr++);
+            GetAllWithinQuotes(key, itr, end);
 
-            itr++; // skip the quote
-            while (itr[0] <= ' ' && itr != end)
-                itr++; // skip all space characters
+            GetAllWithinQuotes(value, itr, end);
 
-            itr++; // skip the quote
-            while (itr[0] != '\"' && itr != end)
-                value += (*itr++);
-
-            if (key == "classname") entity.classname = value;
             entity.keyvalues.insert(std::make_pair(key, value));
 
-            itr++; // skip the quote
-            while (itr[0] <= ' ' && itr != end)
-                itr++; // skip all space characters
+            if (key == "classname")
+            {
+                entity.classname = value;
+            }
         }
+
         entities.push_back(entity);
-        while (itr[0] != '{' && itr != end)
-            itr++; // skip to the next entity
+
+        MoveToNextEntity(itr, end);
     }
     return entities;
 }
@@ -117,7 +152,9 @@ tBSPEntity *BspAsset::FindEntityByClassname(
     {
         tBSPEntity *e = &(*i);
         if (e->classname == classname)
+        {
             return e;
+        }
     }
 
     return nullptr;
@@ -201,7 +238,6 @@ bool BspAsset::LoadFacesWithLightmaps(
     memset(data, 255, 8 * 8 * 3);
     whiteTexture.SetData(8, 8, 3, data);
 
-    std::vector<stbrp_rect> rects;
     for (int f = 0; f < _faceData.count; f++)
     {
         tBSPFace &in = _faceData[f];
@@ -233,6 +269,7 @@ bool BspAsset::LoadFacesWithLightmaps(
         CalculateSurfaceExtents(in, min, max);
 
         tempLightmaps[f] = new Texture();
+        tempLightmaps[f]->SetRepeat(false);
 
         // Skip the lightmaps for faces with special flags
         if (out.flags == 0)
@@ -331,8 +368,10 @@ bool BspAsset::LoadTextures(
                 unsigned a = 255;
 
                 // Do we need a transparent pixel
-                if (tex->Name()[0] == '{' && source0[i] == 255)
+                if (tex->Name()[0] == '{' && b >= 255)
+                {
                     r = g = b = a = 0;
+                }
 
                 destination[i * 4 + 0] = r;
                 destination[i * 4 + 1] = g;
@@ -361,15 +400,17 @@ tBSPMipTexHeader *BspAsset::GetMiptex(
     tBSPMipTexOffsetTable *bspMiptexTable = (tBSPMipTexOffsetTable *)_textureData.data;
 
     if (index >= 0 && bspMiptexTable->miptexCount > index)
+    {
         return (tBSPMipTexHeader *)(_textureData.data + bspMiptexTable->offsets[index]);
+    }
 
     return 0;
 }
 
 int BspAsset::FaceFlags(
-    int index)
+    size_t index)
 {
-    if (index >= 0 && _faces.size() > index)
+    if (_faces.size() > index)
     {
         return _faces[index].flags;
     }
@@ -397,15 +438,25 @@ void BspAsset::CalculateSurfaceExtents(
         const tBSPVertex *v;
         int e = _surfedgeData[in.firstEdge + i];
         if (e >= 0)
+        {
             v = &_verticesData[_edgeData[e].vertex[0]];
+        }
         else
+        {
             v = &_verticesData[_edgeData[-e].vertex[1]];
+        }
 
         for (int j = 0; j < 2; j++)
         {
-            int val = v->point[0] * t->vecs[j][0] + v->point[1] * t->vecs[j][1] + v->point[2] * t->vecs[j][2] + t->vecs[j][3];
-            if (val < min[j]) min[j] = val;
-            if (val > max[j]) max[j] = val;
+            auto val = v->point[0] * t->vecs[j][0] + v->point[1] * t->vecs[j][1] + v->point[2] * t->vecs[j][2] + t->vecs[j][3];
+            if (val < min[j])
+            {
+                min[j] = val;
+            }
+            if (val > max[j])
+            {
+                max[j] = val;
+            }
         }
     }
 }
@@ -433,13 +484,15 @@ bool BspAsset::LoadLightmap(
 
 bool BspAsset::LoadModels()
 {
-    _models.Allocate(_modelData.count);
-
     for (int m = 0; m < _modelData.count; m++)
     {
-        _models[m].position = _modelData[m].origin;
-        _models[m].firstFace = _modelData[m].firstFace;
-        _models[m].faceCount = _modelData[m].faceCount;
+        tModel model;
+
+        model.position = _modelData[m].origin;
+        model.firstFace = _modelData[m].firstFace;
+        model.faceCount = _modelData[m].faceCount;
+
+        _models.push_back(model);
     }
 
     return true;

@@ -230,6 +230,11 @@ void Texture::SetDimentions(
         _data = new unsigned char[dataSize];
 }
 
+void Texture::SetRepeat(bool repeat)
+{
+    _repeat = repeat;
+}
+
 void Texture::CorrectGamma(
     float gamma)
 {

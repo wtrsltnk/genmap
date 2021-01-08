@@ -40,15 +40,18 @@ public:
                 "in vec4 a_texcoords;"
 
                 "uniform mat4 u_matrix;"
+                "uniform vec4 u_color;"
 
                 "out vec2 f_uv_tex;"
                 "out vec2 f_uv_light;"
+                "out vec4 f_color;"
 
                 "void main()"
                 "{"
                 "    gl_Position = u_matrix * vec4(a_vertex.xyz, 1.0);"
                 "    f_uv_light = a_texcoords.xy;"
                 "    f_uv_tex = a_texcoords.zw;"
+                "    f_color = u_color;"
                 "}");
 
             std::string const fshader(
@@ -59,6 +62,7 @@ public:
 
                 "in vec2 f_uv_tex;"
                 "in vec2 f_uv_light;"
+                "in vec4 f_color;"
 
                 "out vec4 color;"
 
@@ -67,7 +71,7 @@ public:
                 "    vec4 texel0, texel1;"
                 "    texel0 = texture2D(u_tex0, f_uv_tex);"
                 "    texel1 = texture2D(u_tex1, f_uv_light);"
-                "    color = texel0 * texel1;"
+                "    color = texel0 * texel1 * f_color;"
                 "}");
 
             if (compile(vshader, fshader))
@@ -147,6 +151,7 @@ public:
         glDeleteShader(fragShader);
 
         _matrixUniformId = glGetUniformLocation(_shaderId, "u_matrix");
+        _colorUniformId = glGetUniformLocation(_shaderId, "u_color");
 
         return true;
     }
@@ -157,6 +162,14 @@ public:
         use();
 
         glUniformMatrix4fv(_matrixUniformId, 1, false, glm::value_ptr(matrix));
+    }
+
+    void setupColor(
+        const glm::vec4 &color)
+    {
+        use();
+
+        glUniform4f(_colorUniformId, color.r, color.g, color.b, color.a);
     }
 
     void setupAttributes(
@@ -206,6 +219,7 @@ public:
 private:
     GLuint _shaderId = 0;
     GLuint _matrixUniformId = 0;
+    GLuint _colorUniformId = 0;
 };
 
 #endif // GLSHADER_H
