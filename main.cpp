@@ -312,8 +312,6 @@ const std::string skyFragmentShader(
     "    color = texture(tex, texCoord);"
     "}");
 
-GLuint sky_textures[6] = {0, 0, 0, 0, 0, 0};
-
 class GenMap
 {
 public:
@@ -404,12 +402,12 @@ public:
             {
                 const auto entity = _registry.create();
 
-                //                spdlog::info("Entity {}", bspEntity.classname);
-                //                for (auto kvp : bspEntity.keyvalues)
-                //                {
-                //                    spdlog::info("    {} = {}", kvp.first, kvp.second);
-                //                }
-                //                spdlog::info(" ");
+                // spdlog::info("Entity {}", bspEntity.classname);
+                // for (auto kvp : bspEntity.keyvalues)
+                // {
+                //     spdlog::info("    {} = {}", kvp.first, kvp.second);
+                // }
+                // spdlog::info(" ");
 
                 if (bspEntity.classname == "worldspawn")
                 {
@@ -478,7 +476,7 @@ public:
 
         for (int i = 0; i < 6; i++)
         {
-            sky_textures[i] = UploadToGl(bspAsset->_skytextures[i]);
+            _skyTextureIndices[i] = UploadToGl(bspAsset->_skytextures[i]);
         }
 
         spdlog::debug("loaded {0} vertices", vertexBuffer.vertexCount());
@@ -565,7 +563,7 @@ public:
 
         for (int i = 0; i < SkyTextures::Count; i++)
         {
-            glBindTexture(GL_TEXTURE_2D, sky_textures[i]);
+            glBindTexture(GL_TEXTURE_2D, _skyTextureIndices[i]);
 
             glDrawArrays(GL_QUADS, i * 4, 4);
         }
@@ -680,64 +678,88 @@ public:
         std::vector<float> buffer;
 
         //if (renderFlag & SKY_BACK)
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, size, size));
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, -size, size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, -size, size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_0, 0, 0))
+            .vertex(glm::vec3(-size, size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_1, 0, 0))
+            .vertex(glm::vec3(-size, -size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_1, 0, 0))
+            .vertex(glm::vec3(size, -size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_0, 0, 0))
+            .vertex(glm::vec3(size, size, size));
 
         //if (renderFlag & SKY_DOWN)
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, -size, size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, -size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, -size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, -size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_1, 0, 0))
+            .vertex(glm::vec3(-size, -size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_1, 0, 0))
+            .vertex(glm::vec3(-size, -size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_0, 0, 0))
+            .vertex(glm::vec3(size, -size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_0, 0, 0))
+            .vertex(glm::vec3(size, -size, size));
 
         //if (renderFlag & SKY_FRONT)
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, -size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, -size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_0, 0, 0))
+            .vertex(glm::vec3(size, size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_1, 0, 0))
+            .vertex(glm::vec3(size, -size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_1, 0, 0))
+            .vertex(glm::vec3(-size, -size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_0, 0, 0))
+            .vertex(glm::vec3(-size, size, -size));
 
         // glBindTextureif (renderFlag & SKY_LEFT)
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, -size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, -size, size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_0, 0, 0))
+            .vertex(glm::vec3(-size, size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_1, 0, 0))
+            .vertex(glm::vec3(-size, -size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_1, 0, 0))
+            .vertex(glm::vec3(-size, -size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_0, 0, 0))
+            .vertex(glm::vec3(-size, size, size));
 
         //if (renderFlag & SKY_RIGHT)
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, -size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, size, size));
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, -size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_1, 0, 0))
+            .vertex(glm::vec3(size, -size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_0, 0, 0))
+            .vertex(glm::vec3(size, size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_0, 0, 0))
+            .vertex(glm::vec3(size, size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_1, 0, 0))
+            .vertex(glm::vec3(size, -size, size));
 
         //if (renderFlag & SKY_UP)
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, size, -size));
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(-size, size, size));
-        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, size, size));
-        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
-        skyVertexBuffer.vertex(glm::vec3(size, size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_0, 0, 0))
+            .vertex(glm::vec3(-size, size, -size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_0, 0, 0))
+            .vertex(glm::vec3(-size, size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_0, uv_1, 0, 0))
+            .vertex(glm::vec3(size, size, size));
+        skyVertexBuffer
+            .uvs(glm::vec4(uv_1, uv_1, 0, 0))
+            .vertex(glm::vec3(size, size, -size));
     }
 
 private:
@@ -746,7 +768,7 @@ private:
     glm::mat4 _projectionMatrix = glm::mat4(1.0f);
     ShaderType skyShader;
     BufferType skyVertexBuffer;
-    GLuint skyCubeMap = 0;
+    GLuint _skyTextureIndices[6] = {0, 0, 0, 0, 0, 0};
     ShaderType normalBlendingShader;
     ShaderType solidBlendingShader;
     BufferType vertexBuffer;
