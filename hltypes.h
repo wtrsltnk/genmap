@@ -1,6 +1,7 @@
 #ifndef _HLTYPES_H_
 #define _HLTYPES_H_
 
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <map>
 #include <set>
@@ -127,6 +128,13 @@ namespace valve
     public:
         virtual std::string LocateFile(const std::string &relativeFilename) = 0;
         virtual bool LoadFile(const std::string &filename, Array<byte> &data) = 0;
+
+        const std::filesystem::path &Root() const { return _root; }
+        const std::string &Mod() const { return _mod; }
+
+    private:
+        std::filesystem::path _root;
+        std::string _mod;
     };
 
     class Asset

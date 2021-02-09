@@ -13,11 +13,15 @@
 #include "camera.h"
 #include "entitycomponents.h"
 #include <entt/entt.hpp>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <sstream>
+#include <stb_image.h>
+
+namespace fs = std::filesystem;
 
 template <class T>
 inline std::istream &operator>>(
@@ -37,18 +41,97 @@ class FileSystem :
     public valve::IFileSystem
 {
 public:
+    void FindRootFromFilePath(
+        const std::string &filePath);
+
     virtual std::string LocateFile(
         const std::string &relativeFilename);
 
     virtual bool LoadFile(
         const std::string &filename,
         valve::Array<valve::byte> &data);
+
+    const fs::path &Root() const;
+    const std::string &Mod() const;
+
+private:
+    fs::path _root;
+    std::string _mod;
 };
+
+const fs::path &FileSystem::Root() const
+{
+    return _root;
+}
+
+const std::string &FileSystem::Mod() const
+{
+    return _mod;
+}
+
+void FileSystem::FindRootFromFilePath(
+    const std::string &filePath)
+{
+    auto path = fs::path(filePath);
+
+    if (!path.has_parent_path())
+    {
+        spdlog::error("given path ({}) has no parent path", filePath);
+
+        return;
+    }
+
+    path = path.parent_path();
+
+    auto fn = path.filename();
+    if (path.has_parent_path() && (fn == "maps" || fn == "models" || fn == "sprites" || fn == "sound" || fn == "gfx" || fn == "env"))
+    {
+        path = path.parent_path();
+    }
+
+    auto lastDirectory = path.filename().generic_string();
+
+    do
+    {
+        for (auto &p : fs::directory_iterator(path))
+        {
+            if (p.is_directory())
+            {
+                continue;
+            }
+
+            if (p.path().filename() == "hl.exe" && p.path().has_parent_path())
+            {
+                _root = p.path().parent_path();
+                _mod = lastDirectory;
+                return;
+            }
+        }
+
+        lastDirectory = path.filename().generic_string();
+        path = path.parent_path();
+
+    } while (path.has_parent_path());
+}
 
 std::string FileSystem::LocateFile(
     const std::string &relativeFilename)
 {
-    return relativeFilename;
+    auto modDir = _root / fs::path(_mod);
+
+    if (fs::exists(modDir / fs::path(relativeFilename)))
+    {
+        return modDir.generic_string();
+    }
+
+    auto valveDir = _root / fs::path("valve");
+
+    if (fs::exists(valveDir / fs::path(relativeFilename)))
+    {
+        return valveDir.generic_string();
+    }
+
+    return "";
 }
 
 bool FileSystem::LoadFile(
@@ -199,7 +282,39 @@ const std::string solidBlendingFragmentShader(
     "    color = tempcolor;"
     "}");
 
-class Test
+const std::string skyVertexShader(
+    "#version 150\n"
+
+    "in vec3 a_vertex;"
+    "in vec4 a_texcoords;"
+
+    "uniform mat4 u_matrix;"
+
+    "out vec2 texCoord;"
+
+    "void main()"
+    "{"
+    "   gl_Position = u_matrix * vec4(a_vertex, 1.0);"
+    "	texCoord = a_texcoords.xy;"
+    "}");
+
+const std::string skyFragmentShader(
+    "#version 150\n"
+
+    "in vec2 texCoord;"
+
+    "uniform sampler2D tex;"
+
+    "out vec4 color;"
+
+    "void main()"
+    "{"
+    "    color = texture(tex, texCoord);"
+    "}");
+
+GLuint sky_textures[6] = {0, 0, 0, 0, 0, 0};
+
+class GenMap
 {
 public:
     bool Startup()
@@ -218,12 +333,21 @@ public:
             NULL,
             GL_FALSE);
 
-        glClearColor(0.0f, 0.8f, 1.0f, 1.0f);
+        glClearColor(0.0f, 0.45f, 0.7f, 1.0f);
 
         normalBlendingShader.compileDefaultShader();
         solidBlendingShader.compile(solidBlendingVertexShader, solidBlendingFragmentShader);
+        skyShader.compile(skyVertexShader, skyFragmentShader);
+
+        GenerateSkyVbo();
+        skyVertexBuffer.setup(skyShader);
 
         FileSystem fs;
+
+        fs.FindRootFromFilePath(filename);
+
+        spdlog::info("{} @ {}", fs.Mod(), fs.Root().generic_string());
+
         bspAsset = new valve::hl1::BspAsset(&fs);
         if (bspAsset->Load(filename))
         {
@@ -280,12 +404,17 @@ public:
             {
                 const auto entity = _registry.create();
 
-                spdlog::info("Entity {}", bspEntity.classname);
-                for (auto kvp : bspEntity.keyvalues)
+                //                spdlog::info("Entity {}", bspEntity.classname);
+                //                for (auto kvp : bspEntity.keyvalues)
+                //                {
+                //                    spdlog::info("    {} = {}", kvp.first, kvp.second);
+                //                }
+                //                spdlog::info(" ");
+
+                if (bspEntity.classname == "worldspawn")
                 {
-                    spdlog::info("    {} = {}", kvp.first, kvp.second);
+                    _registry.assign<ModelComponent>(entity, 0);
                 }
-                spdlog::info(" ");
 
                 auto model = bspEntity.keyvalues.find("model");
                 if (model != bspEntity.keyvalues.end())
@@ -303,10 +432,6 @@ public:
                     {
                         // todo, thi sprobably is a mdl or spr file
                     }
-                }
-                else if (bspEntity.classname == "worldspawn")
-                {
-                    _registry.assign<ModelComponent>(entity, 0);
                 }
 
                 RenderComponent rc = {0, {255, 255, 255}, RenderModes::NormalBlending};
@@ -351,6 +476,11 @@ public:
             return lhs.Mode < rhs.Mode;
         });
 
+        for (int i = 0; i < 6; i++)
+        {
+            sky_textures[i] = UploadToGl(bspAsset->_skytextures[i]);
+        }
+
         spdlog::debug("loaded {0} vertices", vertexBuffer.vertexCount());
 
         return true;
@@ -363,7 +493,7 @@ public:
         glViewport(0, 0, width, height);
 
         // Calculate the projection and view matrix
-        matrix = glm::perspective(glm::radians(90.0f), float(width) / float(height), 0.1f, 4096.0f);
+        _projectionMatrix = glm::perspective(glm::radians(90.0f), float(width) / float(height), 0.1f, 4096.0f);
     }
 
     void Destroy()
@@ -422,20 +552,40 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_TEXTURE_2D);
-        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
 
+        skyShader.use();
+
+        skyShader.setupMatrices(_projectionMatrix * (_cam.GetViewMatrix() * glm::rotate(glm::translate(glm::mat4(1.0f), _cam.Position()), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))));
+
+        skyVertexBuffer.bind();
+        glActiveTexture(GL_TEXTURE0);
+
+        for (int i = 0; i < SkyTextures::Count; i++)
+        {
+            glBindTexture(GL_TEXTURE_2D, sky_textures[i]);
+
+            glDrawArrays(GL_QUADS, i * 4, 4);
+        }
+
+        skyVertexBuffer.unbind();
+
+        vertexBuffer.bind();
+
+        glEnable(GL_DEPTH_TEST);
+
         glDisable(GL_BLEND);
-        RenderModelsByRenderMode(RenderModes::NormalBlending, normalBlendingShader, matrix * _cam.GetViewMatrix());
+        RenderModelsByRenderMode(RenderModes::NormalBlending, normalBlendingShader, _projectionMatrix * _cam.GetViewMatrix());
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_DST_ALPHA);
-        RenderModelsByRenderMode(RenderModes::TextureBlending, normalBlendingShader, matrix * _cam.GetViewMatrix());
+        RenderModelsByRenderMode(RenderModes::TextureBlending, normalBlendingShader, _projectionMatrix * _cam.GetViewMatrix());
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        RenderModelsByRenderMode(RenderModes::SolidBlending, solidBlendingShader, matrix * _cam.GetViewMatrix());
+        RenderModelsByRenderMode(RenderModes::SolidBlending, solidBlendingShader, _projectionMatrix * _cam.GetViewMatrix());
 
         vertexBuffer.unbind();
 
@@ -497,22 +647,106 @@ public:
 
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, _lightmapIndices[_faces[i].lightmapIndex]);
-                vertexBuffer.bind();
 
                 glDrawArrays(GL_TRIANGLE_FAN, _faces[i].firstVertex, _faces[i].vertexCount);
             }
         }
     }
 
-    void SetFilename(const char *fn)
+    void SetFilename(
+        const char *fn)
     {
         filename = fn;
+    }
+
+    enum SkyTextures
+    {
+        Back = 0,
+        Down = 1,
+        Front = 2,
+        Left = 3,
+        Right = 4,
+        up = 5,
+        Count,
+    };
+
+    void GenerateSkyVbo()
+    {
+        // here we make up for the half of pixel to get the sky textures really stitched together because clamping is not enough
+        const float uv_1 = 255.0f / 256.0f;
+        const float uv_0 = 1.0f - uv_1;
+        const float size = 1.0f;
+
+        std::vector<float> buffer;
+
+        //if (renderFlag & SKY_BACK)
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, size, size));
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, -size, size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, -size, size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, size, size));
+
+        //if (renderFlag & SKY_DOWN)
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, -size, size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, -size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, -size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, -size, size));
+
+        //if (renderFlag & SKY_FRONT)
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, -size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, -size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, size, -size));
+
+        // glBindTextureif (renderFlag & SKY_LEFT)
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, -size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, -size, size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, size, size));
+
+        //if (renderFlag & SKY_RIGHT)
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, -size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, size, size));
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, -size, size));
+
+        //if (renderFlag & SKY_UP)
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, size, -size));
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_0, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(-size, size, size));
+        skyVertexBuffer.uvs(glm::vec4(uv_0, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, size, size));
+        skyVertexBuffer.uvs(glm::vec4(uv_1, uv_1, 0, 0));
+        skyVertexBuffer.vertex(glm::vec3(size, size, -size));
     }
 
 private:
     std::string filename;
     valve::hl1::BspAsset *bspAsset = nullptr;
-    glm::mat4 matrix = glm::mat4(1.0f);
+    glm::mat4 _projectionMatrix = glm::mat4(1.0f);
+    ShaderType skyShader;
+    BufferType skyVertexBuffer;
+    GLuint skyCubeMap = 0;
     ShaderType normalBlendingShader;
     ShaderType solidBlendingShader;
     BufferType vertexBuffer;
@@ -530,7 +764,7 @@ int main(
 {
     spdlog::set_level(spdlog::level::debug); // Set global log level to debug
 
-    Test t;
+    GenMap t;
 
     if (argc > 1)
     {
@@ -538,5 +772,5 @@ int main(
         t.SetFilename(argv[1]);
     }
 
-    return Application::Run<Test>(t);
+    return Application::Run<GenMap>(t);
 }

@@ -5,7 +5,9 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <sstream>
+#include <stb_image.h>
 
+namespace fs = std::filesystem;
 using namespace valve::hl1;
 
 BspAsset::BspAsset(
@@ -67,6 +69,8 @@ bool BspAsset::Load(
 
     LoadModels();
 
+    LoadSkyTextures();
+
     return true;
 }
 
@@ -104,6 +108,77 @@ void MoveToNextEntity(
     {
         itr++; // skip to the next entity
     }
+}
+
+bool valve::hl1::BspAsset::LoadSkyTextures()
+{
+    const char *shortNames[] = {"bk", "dn", "ft", "lf", "rt", "up"};
+    std::string sky = "dusk";
+
+    tBSPEntity *worldspawn = FindEntityByClassname("worldspawn");
+    if (worldspawn != nullptr)
+    {
+        auto skyname = worldspawn->keyvalues.find("skyname");
+        if (skyname != worldspawn->keyvalues.end())
+        {
+            sky = skyname->second;
+        }
+    }
+
+    spdlog::info("loading sky {}", sky);
+
+    for (int i = 0; i < 6; i++)
+    {
+        valve::Array<valve::byte> buffer;
+        auto filenametga = fmt::format("gfx/env/{}{}.tga", sky, shortNames[i]);
+        auto location = _fs->LocateFile(filenametga);
+
+        spdlog::debug("loading {} at index {}", shortNames[i], i);
+
+        fs::path fullPath;
+        if (!location.empty())
+        {
+            fullPath = fs::path(location) / fs::path(filenametga);
+        }
+        else
+        {
+            auto filenamebmp = fmt::format("gfx/env/{}{}.bmp", sky, shortNames[i]);
+            location = _fs->LocateFile(filenamebmp);
+
+            if (!location.empty())
+            {
+                fullPath = fs::path(location) / fs::path(filenamebmp);
+            }
+            else
+            {
+                spdlog::error("unable to find sky texture {} in either tga and bmp", shortNames[i]);
+                return false;
+            }
+        }
+
+        if (!_fs->LoadFile(fullPath.generic_string(), buffer))
+        {
+            spdlog::error("failed to load sky texture");
+            return false;
+        }
+
+        int x, y, n;
+        unsigned char *data = stbi_load_from_memory(buffer.data, buffer.count, &x, &y, &n, 0);
+        if (data != nullptr)
+        {
+            _skytextures[i] = new valve::Texture();
+            _skytextures[i]->SetName(fs::relative(fullPath, _fs->Root() / fs::path(_fs->Mod())).generic_string());
+            _skytextures[i]->SetData(x, y, n, data, false);
+        }
+        else
+        {
+            spdlog::error("unable to load tga or bmp from file data");
+
+            return false;
+        }
+    }
+
+    return true;
 }
 
 std::vector<sBSPEntity> BspAsset::LoadEntities(
@@ -332,18 +407,23 @@ bool BspAsset::LoadTextures(
     for (int t = 0; t < int(*_textureData.data); t++)
     {
         const unsigned char *textureData = _textureData.data + textureTable[t];
+
         tBSPMipTexHeader *miptex = (tBSPMipTexHeader *)textureData;
-        Texture *tex = new Texture();
-        tex->SetName(miptex->name);
+
+        auto tex = new Texture(miptex->name);
 
         if (miptex->offsets[0] == 0)
         {
             for (std::vector<WadAsset *>::const_iterator i = wads.cbegin(); i != wads.cend(); ++i)
             {
                 WadAsset *wad = *i;
+
                 textureData = wad->LumpData(wad->IndexOf(miptex->name));
+
                 if (textureData != nullptr)
+                {
                     break;
+                }
             }
         }
 
@@ -385,9 +465,11 @@ bool BspAsset::LoadTextures(
         }
         else
         {
-            spdlog::error("Texture \"{0}\" not found", miptex->name);
+            spdlog::error("Texture \"{0}\" not found, using default texture", miptex->name);
+
             tex->DefaultTexture();
         }
+
         textures.push_back(tex);
     }
 
@@ -437,6 +519,7 @@ void BspAsset::CalculateSurfaceExtents(
     {
         const tBSPVertex *v;
         int e = _surfedgeData[in.firstEdge + i];
+
         if (e >= 0)
         {
             v = &_verticesData[_edgeData[e].vertex[0]];
@@ -448,11 +531,13 @@ void BspAsset::CalculateSurfaceExtents(
 
         for (int j = 0; j < 2; j++)
         {
-            auto val = v->point[0] * t->vecs[j][0] + v->point[1] * t->vecs[j][1] + v->point[2] * t->vecs[j][2] + t->vecs[j][3];
+            auto val = (v->point[0] * t->vecs[j][0]) + (v->point[1] * t->vecs[j][1]) + (v->point[2] * t->vecs[j][2]) + t->vecs[j][3];
+
             if (val < min[j])
             {
                 min[j] = val;
             }
+
             if (val > max[j])
             {
                 max[j] = val;
@@ -469,6 +554,7 @@ bool BspAsset::LoadLightmap(
 {
     // compute lightmap size
     int size[2];
+
     for (int c = 0; c < 2; c++)
     {
         float tmin = floorf(min[c] / 16.0f);

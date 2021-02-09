@@ -1,14 +1,16 @@
 #include "camera.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <spdlog/spdlog.h>
 
 Camera::Camera()
     : _position(glm::vec3(0.0f, 0.0f, 0.0f)),
       _up(glm::vec3(0.0f, 0.0f, 1.0f)),
       _rotation(glm::mat4(1.0f))
-{ }
+{}
 
 Camera::~Camera()
-{ }
+{}
 
 glm::mat4 Camera::GetViewMatrix()
 {
@@ -25,22 +27,22 @@ glm::vec3 Camera::Left() const
     return glm::cross(this->Up(), this->Forward());
 }
 
-const glm::vec3& Camera::Up() const
+const glm::vec3 &Camera::Up() const
 {
     return this->_up;
 }
 
-void Camera::SetUp(const glm::vec3& up)
+void Camera::SetUp(const glm::vec3 &up)
 {
     this->_up = up;
 }
 
-const glm::vec3& Camera::Position() const
+const glm::vec3 &Camera::Position() const
 {
     return this->_position;
 }
 
-void Camera::SetPosition(const glm::vec3& pos)
+void Camera::SetPosition(const glm::vec3 &pos)
 {
     this->_position = pos;
 }
@@ -53,11 +55,15 @@ glm::vec3 Camera::Target() const
 void Camera::MoveForward(float amount)
 {
     this->_position += this->Forward() * amount;
+
+    spdlog::info(glm::to_string(_position));
 }
 
 void Camera::MoveLeft(float amount)
 {
     this->_position += this->Left() * amount;
+
+    spdlog::info(glm::to_string(_position));
 }
 
 void Camera::RotateX(float angle)
@@ -74,4 +80,3 @@ void Camera::RotateZ(float angle)
 {
     this->_rotation = glm::rotate(this->_rotation, angle, glm::vec3(0, 0, 1));
 }
-

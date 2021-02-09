@@ -46,6 +46,7 @@ add_executable(genmap
     include/glshader.h
     main.cpp
     stb_rect_pack.cpp
+    stb_image.cpp
     )
 
 target_include_directories(genmap

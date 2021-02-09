@@ -74,6 +74,7 @@ namespace valve
             std::vector<Texture *> _lightMaps;
             std::vector<tVertex> _vertices;
             std::vector<tFace> _faces;
+            valve::Texture *_skytextures[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
         private:
             // Constructs an Array from the given lump index. The memory in the lump is not owned by the lump
@@ -117,6 +118,8 @@ namespace valve
                 std::vector<tFace> &faces,
                 std::vector<Texture *> &lightmaps,
                 std::vector<tVertex> &vertices);
+
+            bool LoadSkyTextures();
 
             bool LoadTextures(
                 std::vector<Texture *> &textures,
