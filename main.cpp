@@ -14,6 +14,7 @@
 #include "entitycomponents.h"
 #include <entt/entt.hpp>
 #include <filesystem>
+#include <fstream>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
@@ -37,12 +38,17 @@ inline std::istream &operator>>(
     return str;
 }
 
-class FileSystem :
-    public valve::IFileSystem
+class FileSystemSearchPath
 {
 public:
-    void FindRootFromFilePath(
-        const std::string &filePath);
+    explicit FileSystemSearchPath(
+        const std::filesystem::path &root);
+
+    explicit FileSystemSearchPath(
+        const std::string &root);
+
+    virtual bool IsInSearchPath(
+        const std::string &filename);
 
     virtual std::string LocateFile(
         const std::string &relativeFilename);
@@ -51,13 +57,287 @@ public:
         const std::string &filename,
         valve::Array<valve::byte> &data);
 
+protected:
+    std::filesystem::path _root;
+};
+
+FileSystemSearchPath::FileSystemSearchPath(
+    const std::filesystem::path &root)
+    : _root(root)
+{}
+
+FileSystemSearchPath::FileSystemSearchPath(
+    const std::string &root)
+    : _root(std::filesystem::path(root))
+{}
+
+bool FileSystemSearchPath::IsInSearchPath(
+    const std::string &filename)
+{
+    if (filename.find("pak0.pak") != _root.make_preferred().string().find("pak0.pak"))
+    {
+        return false;
+    }
+
+    return std::filesystem::path(filename).make_preferred().string()._Starts_with(_root.make_preferred().string());
+}
+
+std::string FileSystemSearchPath::LocateFile(
+    const std::string &relativeFilename)
+{
+    if (fs::exists(_root / fs::path(relativeFilename)))
+    {
+        return _root.generic_string();
+    }
+
+    return "";
+}
+
+bool FileSystemSearchPath::LoadFile(
+    const std::string &filename,
+    valve::Array<valve::byte> &data)
+{
+    std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
+
+    if (!file.is_open())
+    {
+        spdlog::error("File not found: {0}", filename);
+
+        return false;
+    }
+
+    auto count = file.tellg();
+
+    data.Allocate(count);
+    file.seekg(0, std::ios::beg);
+    file.read((char *)data.data, data.count);
+
+    file.close();
+
+    return true;
+}
+
+class PakSearchPath :
+    public FileSystemSearchPath
+{
+public:
+    explicit PakSearchPath(
+        const std::filesystem::path &root);
+
+    explicit PakSearchPath(
+        const std::string &root);
+
+    virtual ~PakSearchPath();
+
+    virtual std::string LocateFile(
+        const std::string &relativeFilename);
+
+    virtual bool LoadFile(
+        const std::string &filename,
+        valve::Array<valve::byte> &data);
+
+private:
+    void OpenPakFile();
+    std::ifstream _pakFile;
+    valve::hl1::tPAKHeader _header;
+    std::vector<valve::hl1::tPAKLump> _files;
+};
+
+PakSearchPath::PakSearchPath(
+    const std::filesystem::path &root)
+    : FileSystemSearchPath(root)
+{
+    OpenPakFile();
+}
+
+PakSearchPath::PakSearchPath(
+    const std::string &root)
+    : FileSystemSearchPath(std::filesystem::path(root))
+{
+    OpenPakFile();
+}
+
+PakSearchPath::~PakSearchPath()
+{
+    if (_pakFile.is_open())
+    {
+        _pakFile.close();
+    }
+}
+
+void PakSearchPath::OpenPakFile()
+{
+    if (!std::filesystem::exists(_root))
+    {
+        spdlog::error("{} does not exist", _root.string());
+
+        return;
+    }
+
+    _pakFile.open(_root.string(), std::fstream::in | std::fstream::binary);
+
+    if (!_pakFile.is_open())
+    {
+        spdlog::error("failed to open pak file {}", _root.string());
+
+        return;
+    }
+
+    _pakFile.read((char *)&_header, sizeof(valve::hl1::tPAKHeader));
+
+    if (_header.signature[0] != 'P' || _header.signature[1] != 'A' || _header.signature[2] != 'C' || _header.signature[3] != 'K')
+    {
+        _pakFile.close();
+
+        spdlog::error("failed to open pak file {} due to wrong header {}", _root.string(), _header.signature);
+
+        return;
+    }
+
+    _files.resize(_header.lumpsSize / sizeof(valve::hl1::tPAKLump));
+    _pakFile.seekg(_header.lumpsOffset, std::fstream::beg);
+    _pakFile.read((char *)_files.data(), _header.lumpsSize);
+
+    spdlog::debug("loaded {} containing {} files", _root.string(), _files.size());
+}
+
+std::string PakSearchPath::LocateFile(
+    const std::string &relativeFilename)
+{
+    for (auto f : _files)
+    {
+        if (relativeFilename == std::string(f.name))
+        {
+            return _root.string();
+        }
+    }
+
+    return "";
+}
+
+bool PakSearchPath::LoadFile(
+    const std::string &filename,
+    valve::Array<valve::byte> &data)
+{
+    if (!_pakFile.is_open())
+    {
+        return false;
+    }
+
+    auto relativeFilename = filename.substr(_root.string().length() + 1);
+
+    for (auto f : _files)
+    {
+        if (relativeFilename == std::string(f.name))
+        {
+            data.Allocate(f.filelen);
+            _pakFile.seekg(f.filepos, std::fstream::beg);
+            _pakFile.read((char *)data.data, f.filelen);
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+class FileSystem :
+    public valve::IFileSystem
+{
+public:
+    void FindRootFromFilePath(
+        const std::string &filePath);
+
+    virtual std::string LocateFile(
+        const std::string &relativeFilename) override;
+
+    virtual bool LoadFile(
+        const std::string &filename,
+        valve::Array<valve::byte> &data) override;
+
     const fs::path &Root() const;
     const std::string &Mod() const;
 
 private:
-    fs::path _root;
+    std::filesystem::path _root;
     std::string _mod;
+    std::vector<std::unique_ptr<FileSystemSearchPath>> _searchPaths;
+
+    void SetRootAndMod(
+        const fs::path &root,
+        const std::string &mod);
 };
+
+std::string FileSystem::LocateFile(
+    const std::string &relativeFilename)
+{
+    for (auto &searchPath : _searchPaths)
+    {
+        auto result = searchPath->LocateFile(relativeFilename);
+        if (!result.empty())
+        {
+            return result;
+        }
+    }
+
+    return "";
+}
+
+bool FileSystem::LoadFile(
+    const std::string &filename,
+    valve::Array<valve::byte> &data)
+{
+    for (auto &searchPath : _searchPaths)
+    {
+        if (!searchPath->IsInSearchPath(filename))
+        {
+            continue;
+        }
+
+        if (searchPath->LoadFile(filename, data))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void FileSystem::SetRootAndMod(
+    const fs::path &root,
+    const std::string &mod)
+{
+    _root = root;
+    _mod = mod;
+
+    auto modPath = _root / std::filesystem::path(_mod);
+
+    if (fs::exists(modPath))
+    {
+        _searchPaths.push_back(std::make_unique<FileSystemSearchPath>(modPath));
+
+        auto modPak = modPath / std::filesystem::path("pak0.pak");
+
+        if (fs::exists(modPak))
+        {
+            _searchPaths.push_back(std::make_unique<PakSearchPath>(modPak));
+        }
+    }
+
+    auto valvePath = _root / std::filesystem::path("valve");
+
+    if (fs::exists(valvePath))
+    {
+        _searchPaths.push_back(std::make_unique<FileSystemSearchPath>(valvePath));
+
+        auto valvePak = valvePath / std::filesystem::path("pak0.pak");
+
+        if (fs::exists(valvePak))
+        {
+            _searchPaths.push_back(std::make_unique<PakSearchPath>(valvePak));
+        }
+    }
+}
 
 const fs::path &FileSystem::Root() const
 {
@@ -81,7 +361,10 @@ void FileSystem::FindRootFromFilePath(
         return;
     }
 
-    path = path.parent_path();
+    if (!std::filesystem::is_directory(path))
+    {
+        path = path.parent_path();
+    }
 
     auto fn = path.filename();
     if (path.has_parent_path() && (fn == "maps" || fn == "models" || fn == "sprites" || fn == "sound" || fn == "gfx" || fn == "env"))
@@ -102,8 +385,8 @@ void FileSystem::FindRootFromFilePath(
 
             if (p.path().filename() == "hl.exe" && p.path().has_parent_path())
             {
-                _root = p.path().parent_path();
-                _mod = lastDirectory;
+                SetRootAndMod(p.path().parent_path(), lastDirectory);
+
                 return;
             }
         }
@@ -112,50 +395,6 @@ void FileSystem::FindRootFromFilePath(
         path = path.parent_path();
 
     } while (path.has_parent_path());
-}
-
-std::string FileSystem::LocateFile(
-    const std::string &relativeFilename)
-{
-    auto modDir = _root / fs::path(_mod);
-
-    if (fs::exists(modDir / fs::path(relativeFilename)))
-    {
-        return modDir.generic_string();
-    }
-
-    auto valveDir = _root / fs::path("valve");
-
-    if (fs::exists(valveDir / fs::path(relativeFilename)))
-    {
-        return valveDir.generic_string();
-    }
-
-    return "";
-}
-
-bool FileSystem::LoadFile(
-    const std::string &filename,
-    valve::Array<valve::byte> &data)
-{
-    std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
-
-    if (!file.is_open())
-    {
-        spdlog::error("File not found: {0}", filename);
-
-        return false;
-    }
-
-    auto count = file.tellg();
-
-    data.Allocate(count);
-    file.seekg(0, std::ios::beg);
-    file.read((char *)data.data, data.count);
-
-    file.close();
-
-    return true;
 }
 
 unsigned int UploadToGl(
@@ -340,14 +579,10 @@ public:
         GenerateSkyVbo();
         skyVertexBuffer.setup(skyShader);
 
-        FileSystem fs;
+        spdlog::info("{} @ {}", _fs.Mod(), _fs.Root().generic_string());
 
-        fs.FindRootFromFilePath(filename);
-
-        spdlog::info("{} @ {}", fs.Mod(), fs.Root().generic_string());
-
-        bspAsset = new valve::hl1::BspAsset(&fs);
-        if (bspAsset->Load(filename))
+        bspAsset = new valve::hl1::BspAsset(&_fs);
+        if (bspAsset->Load(_map))
         {
             _lightmapIndices = std::vector<GLuint>(bspAsset->_lightMaps.size());
             glActiveTexture(GL_TEXTURE1);
@@ -468,16 +703,16 @@ public:
                     _registry.assign<OriginComponent>(entity, glm::vec3(0.0f));
                 }
             }
+
+            for (int i = 0; i < 6; i++)
+            {
+                _skyTextureIndices[i] = UploadToGl(bspAsset->_skytextures[i]);
+            }
         }
 
         _registry.sort<RenderComponent>([](const RenderComponent &lhs, const RenderComponent &rhs) {
             return lhs.Mode < rhs.Mode;
         });
-
-        for (int i = 0; i < 6; i++)
-        {
-            _skyTextureIndices[i] = UploadToGl(bspAsset->_skytextures[i]);
-        }
 
         spdlog::debug("loaded {0} vertices", vertexBuffer.vertexCount());
 
@@ -652,9 +887,11 @@ public:
     }
 
     void SetFilename(
-        const char *fn)
+        const char *root,
+        const char *map)
     {
-        filename = fn;
+        _fs.FindRootFromFilePath(root);
+        _map = map;
     }
 
     enum SkyTextures
@@ -763,7 +1000,8 @@ public:
     }
 
 private:
-    std::string filename;
+    FileSystem _fs;
+    std::string _map;
     valve::hl1::BspAsset *bspAsset = nullptr;
     glm::mat4 _projectionMatrix = glm::mat4(1.0f);
     ShaderType skyShader;
@@ -788,10 +1026,10 @@ int main(
 
     GenMap t;
 
-    if (argc > 1)
+    if (argc > 2)
     {
-        spdlog::debug("loading map {0}", argv[1]);
-        t.SetFilename(argv[1]);
+        spdlog::debug("loading map {1} from {0}", argv[1], argv[2]);
+        t.SetFilename(argv[1], argv[2]);
     }
 
     return Application::Run<GenMap>(t);

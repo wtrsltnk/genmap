@@ -55,15 +55,11 @@ glm::vec3 Camera::Target() const
 void Camera::MoveForward(float amount)
 {
     this->_position += this->Forward() * amount;
-
-    spdlog::info(glm::to_string(_position));
 }
 
 void Camera::MoveLeft(float amount)
 {
     this->_position += this->Left() * amount;
-
-    spdlog::info(glm::to_string(_position));
 }
 
 void Camera::RotateX(float angle)

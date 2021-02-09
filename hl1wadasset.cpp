@@ -142,50 +142,32 @@ void join(
 
 std::vector<WadAsset *> WadAsset::LoadWads(
     const std::string &wads,
-    const std::string &bspLocation,
     IFileSystem *fs)
 {
-    std::string tmp = bspLocation;
-    std::replace(tmp.begin(), tmp.end(), '/', '\\');
-    std::vector<std::string> bspComponents = split(tmp, '\\');
-
-    // We assume the bsp file is somewere in a half-life maps directory, so going
-    // up one folder will make the mod root and two folders will make the
-    // half-life root folder
-    std::vector<std::string> hints;
-    {
-        std::stringstream s;
-        join(s, bspComponents.begin(), bspComponents.end() - 2, "\\");
-        hints.push_back(s.str());
-    }
-    {
-        std::stringstream s;
-        join(s, bspComponents.begin(), bspComponents.end() - 3, "\\");
-        s << "\\valve";
-        hints.push_back(s.str());
-    }
-    {
-        std::stringstream s;
-        join(s, bspComponents.begin(), bspComponents.end() - 3, "\\");
-        hints.push_back(s.str());
-    }
-
     std::vector<WadAsset *> result;
 
     std::istringstream f(wads);
     std::string s;
     while (getline(f, s, ';'))
     {
-        std::string found = WadAsset::FindWad(s, hints);
+        auto wadPath = std::filesystem::path(s);
+        auto location = fs->LocateFile(wadPath.filename().string());
+        if (location.empty())
+        {
+            continue;
+        }
+
         WadAsset *wad = new WadAsset(fs);
 
-        if (wad->Load(found))
+        auto fullWadPath = location / wadPath.filename();
+
+        if (wad->Load(fullWadPath.string()))
         {
             result.push_back(wad);
         }
         else
         {
-            spdlog::error("Unable to load wad files @ {0}", found);
+            spdlog::error("Unable to load wad files @ {0}", fullWadPath.string());
             delete wad;
         }
     }

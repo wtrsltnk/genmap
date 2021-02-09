@@ -22,7 +22,16 @@ BspAsset::~BspAsset()
 bool BspAsset::Load(
     const std::string &filename)
 {
-    if (!_fs->LoadFile(filename, data))
+    auto location = _fs->LocateFile(filename);
+
+    if (location.empty())
+    {
+        return false;
+    }
+
+    auto fullpath = std::filesystem::path(location) / filename;
+
+    if (!_fs->LoadFile(fullpath.string(), data))
     {
         return false;
     }
@@ -59,7 +68,7 @@ bool BspAsset::Load(
     tBSPEntity *worldspawn = FindEntityByClassname("worldspawn");
     if (worldspawn != nullptr)
     {
-        wads = WadAsset::LoadWads(worldspawn->keyvalues["wad"], filename, _fs);
+        wads = WadAsset::LoadWads(worldspawn->keyvalues["wad"], _fs);
     }
 
     LoadTextures(_textures, wads);
@@ -151,7 +160,7 @@ bool valve::hl1::BspAsset::LoadSkyTextures()
             }
             else
             {
-                spdlog::error("unable to find sky texture {} in either tga and bmp", shortNames[i]);
+                spdlog::error("unable to find sky texture {} as either tga and bmp", shortNames[i]);
                 return false;
             }
         }

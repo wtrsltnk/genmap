@@ -40,7 +40,6 @@ namespace valve
 
             static std::vector<WadAsset *> LoadWads(
                 const std::string &wads,
-                const std::string &bspLocation,
                 IFileSystem *fs);
 
             static void UnloadWads(

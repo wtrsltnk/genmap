@@ -1,5 +1,5 @@
 #ifndef _HL1BSPTYPES_H_
-#define	_HL1BSPTYPES_H_
+#define _HL1BSPTYPES_H_
 
 #include "hltypes.h"
 
@@ -28,190 +28,205 @@
 
 #define HL1_WAD_SIGNATURE "WAD3"
 
-#define CONTENTS_EMPTY  -1
-#define CONTENTS_SOLID  -2
-#define CONTENTS_WATER  -3
-#define CONTENTS_SLIME  -4
-#define CONTENTS_LAVA   -5
-#define CONTENTS_SKY    -6
+#define CONTENTS_EMPTY -1
+#define CONTENTS_SOLID -2
+#define CONTENTS_WATER -3
+#define CONTENTS_SLIME -4
+#define CONTENTS_LAVA -5
+#define CONTENTS_SKY -6
 #define CONTENTS_ORIGIN -7 // removed at csg time
-#define CONTENTS_CLIP   -8 // changed to contents_solid
+#define CONTENTS_CLIP -8   // changed to contents_solid
 
-#define CONTENTS_CURRENT_0    -9
-#define CONTENTS_CURRENT_90   -10
-#define CONTENTS_CURRENT_180  -11
-#define CONTENTS_CURRENT_270  -12
-#define CONTENTS_CURRENT_UP   -13
+#define CONTENTS_CURRENT_0 -9
+#define CONTENTS_CURRENT_90 -10
+#define CONTENTS_CURRENT_180 -11
+#define CONTENTS_CURRENT_270 -12
+#define CONTENTS_CURRENT_UP -13
 #define CONTENTS_CURRENT_DOWN -14
 
-#define CONTENTS_TRANSLUCENT  -15
+#define CONTENTS_TRANSLUCENT -15
 
 #pragma pack(push, 4)
 
 namespace valve
 {
 
-namespace hl1
-{
-    /* BSP */
-    typedef struct sBSPLump
+    namespace hl1
     {
-        int offset;
-        int size;
+        /* BSP */
+        typedef struct sBSPLump
+        {
+            int offset;
+            int size;
 
-    } tBSPLump;
+        } tBSPLump;
 
-    typedef struct sBSPHeader
-    {
-        int signature;
-        tBSPLump lumps[HL1_BSP_LUMPCOUNT];
+        typedef struct sBSPHeader
+        {
+            int signature;
+            tBSPLump lumps[HL1_BSP_LUMPCOUNT];
 
-    } tBSPHeader;
+        } tBSPHeader;
 
-    typedef struct sBSPMipTexOffsetTable
-    {
-        int miptexCount;
-        int offsets[1];             /* an array with "miptexcount" number of offsets */
+        typedef struct sBSPMipTexOffsetTable
+        {
+            int miptexCount;
+            int offsets[1]; /* an array with "miptexcount" number of offsets */
 
-    } tBSPMipTexOffsetTable;
+        } tBSPMipTexOffsetTable;
 
-    typedef struct sBSPMipTexHeader
-    {
-        char name[16];
-        unsigned int width;
-        unsigned int height;
-        unsigned int offsets[4];
+        typedef struct sBSPMipTexHeader
+        {
+            char name[16];
+            unsigned int width;
+            unsigned int height;
+            unsigned int offsets[4];
 
-    } tBSPMipTexHeader;
+        } tBSPMipTexHeader;
 
+        typedef struct sBSPModel
+        {
+            glm::vec3 mins, maxs;
+            glm::vec3 origin;
+            int headnode[HL1_BSP_MAX_MAP_HULLS];
+            int visLeafs; // not including the solid leaf 0
+            int firstFace;
+            int faceCount;
 
-    typedef struct sBSPModel
-    {
-        glm::vec3 mins, maxs;
-        glm::vec3 origin;
-        int headnode[HL1_BSP_MAX_MAP_HULLS];
-        int visLeafs;                       // not including the solid leaf 0
-        int firstFace;
-        int faceCount;
+        } tBSPModel;
 
-    } tBSPModel;
+        typedef struct sBSPVertex
+        {
+            glm::vec3 point;
 
-    typedef struct sBSPVertex
-    {
-        glm::vec3 point;
+        } tBSPVertex;
 
-    } tBSPVertex;
+        typedef struct sBSPEdge
+        {
+            unsigned short vertex[2];
 
-    typedef struct sBSPEdge
-    {
-        unsigned short vertex[2];
+        } tBSPEdge;
 
-    } tBSPEdge;
+        typedef struct sBSPFace
+        {
+            short planeIndex;
+            short side;
+            int firstEdge;
+            short edgeCount;
+            short texinfo;
 
-    typedef struct sBSPFace
-    {
-        short planeIndex;
-        short side;
-        int firstEdge;
-        short edgeCount;
-        short texinfo;
+            // lighting info
+            unsigned char styles[HL1_BSP_MAX_LIGHT_MAPS];
+            int lightOffset; // start of [numstyles*surfsize] samples
 
-        // lighting info
-        unsigned char styles[HL1_BSP_MAX_LIGHT_MAPS];
-        int lightOffset;                    // start of [numstyles*surfsize] samples
+        } tBSPFace;
 
-    } tBSPFace;
+        typedef struct sBSPPlane
+        {
+            glm::vec3 normal;
+            float distance;
+            int type;
 
-    typedef struct sBSPPlane
-    {
-        glm::vec3 normal;
-        float distance;
-        int type;
+        } tBSPPlane;
 
-    } tBSPPlane;
+        typedef struct sBSPNode
+        {
+            int planeIndex;
+            short children[2]; // negative numbers are -(leafs+1), not nodes
+            short mins[3];     // for sphere culling
+            short maxs[3];
+            unsigned short firstFace;
+            unsigned short faceCount; // counting both sides
 
-    typedef struct sBSPNode
-    {
-        int planeIndex;
-        short children[2];                  // negative numbers are -(leafs+1), not nodes
-        short mins[3];                      // for sphere culling
-        short maxs[3];
-        unsigned short firstFace;
-        unsigned short faceCount;            // counting both sides
+        } tBSPNode;
 
-    } tBSPNode;
+        typedef struct sBSPClipNode
+        {
+            int planeIndex;
+            short children[2]; // negative numbers are contents
 
-    typedef struct sBSPClipNode
-    {
-        int planeIndex;
-        short children[2];                  // negative numbers are contents
+        } tBSPClipNode;
 
-    } tBSPClipNode;
+        typedef struct sBSPTexInfo
+        {
+            glm::vec4 vecs[2]; // [s/t][xyz offset]
+            int miptexIndex;
+            int flags;
 
-    typedef struct sBSPTexInfo
-    {
-        glm::vec4 vecs[2];                // [s/t][xyz offset]
-        int miptexIndex;
-        int flags;
+        } tBSPTexInfo;
 
-    } tBSPTexInfo;
+        typedef struct sBSPLeaf
+        {
+            int contents;
+            int visofs; // -1 = no visibility info
 
-    typedef struct sBSPLeaf
-    {
-        int contents;
-        int visofs;                         // -1 = no visibility info
+            short mins[3]; // for frustum culling
+            short maxs[3];
 
-        short mins[3];                      // for frustum culling
-        short maxs[3];
+            unsigned short firstMarkSurface;
+            unsigned short markSurfacesCount;
 
-        unsigned short firstMarkSurface;
-        unsigned short markSurfacesCount;
+            unsigned char ambientLevel[HL1_BSP_MAX_AMBIENTS];
 
-        unsigned char ambientLevel[HL1_BSP_MAX_AMBIENTS];
+        } tBSPLeaf;
 
-    } tBSPLeaf;
+        typedef struct sBSPEntity
+        {
+            std::string classname;
+            KeyValueList keyvalues;
 
-    typedef struct sBSPEntity
-    {
-        std::string classname;
-        KeyValueList keyvalues;
+        } tBSPEntity;
 
-    } tBSPEntity;
+        typedef struct sBSPVisLeaf
+        {
+            int leafCount;
+            int *leafs;
 
-    typedef struct sBSPVisLeaf
-    {
-        int leafCount;
-        int* leafs;
+        } tBSPVisLeaf;
 
-    } tBSPVisLeaf;
+        /* WAD */
+        typedef struct sWADHeader
+        {
+            char signature[4];
+            int lumpsCount;
+            int lumpsOffset;
 
+        } tWADHeader;
 
-    /* WAD */
-    typedef struct sWADHeader
-    {
-        char signature[4];
-        int lumpsCount;
-        int lumpsOffset;
+        typedef struct sWADLump
+        {
+            int offset;
+            int sizeOnDisk;
+            int size;
+            char type;
+            char compression;
+            char empty0;
+            char empty1;
+            char name[16];
 
-    } tWADHeader;
+        } tWADLump;
 
-    typedef struct sWADLump
-    {
-        int offset;
-        int sizeOnDisk;
-        int size;
-        char type;
-        char compression;
-        char empty0;
-        char empty1;
-        char name[16];
+        /* PAK */
+        typedef struct sPAKLump
+        {
+            char name[56];
+            int filepos;
+            int filelen;
 
-    } tWADLump;
+        } tPAKLump;
 
-}
+        typedef struct sPAKHeader
+        {
+            char signature[4];
+            int lumpsOffset;
+            int lumpsSize;
 
-}
+        } tPAKHeader;
+
+    } // namespace hl1
+
+} // namespace valve
 
 #pragma pack(pop)
 
-#endif	/* _HL1BSPTYPES_H_ */
+#endif /* _HL1BSPTYPES_H_ */
