@@ -142,8 +142,6 @@ bool valve::hl1::BspAsset::LoadSkyTextures()
         auto filenametga = fmt::format("gfx/env/{}{}.tga", sky, shortNames[i]);
         auto location = _fs->LocateFile(filenametga);
 
-        spdlog::debug("loading {} at index {}", shortNames[i], i);
-
         fs::path fullPath;
         if (!location.empty())
         {

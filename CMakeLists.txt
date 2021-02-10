@@ -32,44 +32,62 @@ endif()
 
 add_executable(genmap
     batchrenderer.cpp
+    batchrenderer.h
     camera.cpp
+    camera.h
     entitycomponents.h
     hl1bspasset.cpp
     hl1bspasset.h
+    hl1bsptypes.h
+    hl1filesystem.cpp
+    hl1filesystem.h
     hl1wadasset.cpp
     hl1wadasset.h
     hltexture.cpp
     hltexture.h
+    hltypes.h
     include/application.h
     include/glad/glad.h
     include/glbuffer.h
     include/glshader.h
+    include/stb_image.h
+    include/stb_rect_pack.h
     main.cpp
-    stb_rect_pack.cpp
     stb_image.cpp
+    stb_rect_pack.cpp
     )
+
+target_sources(genmap
+    PRIVATE
+        include/GL/wglext.h
+)
 
 target_include_directories(genmap
-    PRIVATE include
-    PRIVATE glad
-    )
+    PRIVATE
+        include
+        glad
+)
 
 target_link_libraries(genmap
-    ${OPENGL_LIBRARIES}
-    glm
-    spdlog
-    EnTT
-    )
+    PRIVATE
+        ${OPENGL_LIBRARIES}
+        glm
+        spdlog
+        EnTT
+)
 
 target_compile_features(genmap
-    PRIVATE cxx_std_17
-    PRIVATE cxx_auto_type
-    PRIVATE cxx_nullptr
-    PRIVATE cxx_range_for
-    PRIVATE cxx_thread_local
-    )
+    PRIVATE
+        cxx_std_17
+        cxx_auto_type
+        cxx_nullptr
+        cxx_range_for
+        cxx_thread_local
+)
 
 if(MINGW)
     target_link_options(genmap
-        PUBLIC -static)
+        PUBLIC
+            -static
+    )
 endif()
