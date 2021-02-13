@@ -563,16 +563,18 @@ public:
 
         glEnable(GL_DEPTH_TEST);
 
+        auto m = _projectionMatrix * _cam.GetViewMatrix();
+
         glDisable(GL_BLEND);
-        RenderModelsByRenderMode(RenderModes::NormalBlending, _normalBlendingShader, _projectionMatrix * _cam.GetViewMatrix());
+        RenderModelsByRenderMode(RenderModes::NormalBlending, _normalBlendingShader, m);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_DST_ALPHA);
-        RenderModelsByRenderMode(RenderModes::TextureBlending, _normalBlendingShader, _projectionMatrix * _cam.GetViewMatrix());
+        RenderModelsByRenderMode(RenderModes::TextureBlending, _normalBlendingShader, m);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        RenderModelsByRenderMode(RenderModes::SolidBlending, _solidBlendingShader, _projectionMatrix * _cam.GetViewMatrix());
+        RenderModelsByRenderMode(RenderModes::SolidBlending, _solidBlendingShader, m);
 
         _vertexBuffer.unbind();
     }
@@ -582,9 +584,9 @@ public:
         ShaderType &shader,
         const glm::mat4 &matrix)
     {
-        shader.use();
-
         auto view = _registry.view<RenderComponent, ModelComponent, OriginComponent>();
+
+        shader.use();
 
         if (mode == RenderModes::NormalBlending)
         {

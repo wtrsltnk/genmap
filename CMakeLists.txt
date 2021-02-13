@@ -31,8 +31,6 @@ if (EnTT_ADDED)
 endif()
 
 add_executable(genmap
-    batchrenderer.cpp
-    batchrenderer.h
     camera.cpp
     camera.h
     entitycomponents.h

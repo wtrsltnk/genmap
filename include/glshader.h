@@ -2,7 +2,7 @@
 #define GLSHADER_H
 
 #include "glad/glad.h"
-//#include <glmath.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
