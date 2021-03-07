@@ -170,6 +170,8 @@ namespace valve
 
         } tBSPLeaf;
 
+        typedef std::map<std::string, std::string> KeyValueList;
+
         typedef struct sBSPEntity
         {
             std::string classname;

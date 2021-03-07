@@ -14,11 +14,44 @@ namespace valve
     namespace hl1
     {
 
+        class BspFile
+        {
+        public:
+            BspFile(byte *data);
+
+            std::vector<byte> _entityData;
+            std::vector<tBSPPlane> _planes;
+            std::vector<unsigned char> _textureData;
+            std::vector<tBSPVertex> _verticesData;
+            std::vector<byte> _visData;
+            std::vector<tBSPNode> _nodeData;
+            std::vector<tBSPTexInfo> _texinfoData;
+            std::vector<tBSPFace> _faceData;
+            std::vector<byte> _lightingData;
+            std::vector<tBSPClipNode> _clipnodeData;
+            std::vector<tBSPLeaf> _leafData;
+            std::vector<unsigned short> _marksurfaceData;
+            std::vector<tBSPEdge> _edgeData;
+            std::vector<int> _surfedgeData;
+            std::vector<tBSPModel> _modelData;
+
+        private:
+            template <class T, int L>
+            std::vector<T> LoadLump(byte *data)
+            {
+                auto header = reinterpret_cast<tBSPHeader *>(data);
+
+                auto offsetPtr = data + header->lumps[L].offset;
+                auto typePtr = reinterpret_cast<T *>(offsetPtr);
+
+                return std::vector<T>(typePtr, typePtr + (header->lumps[L].size / sizeof(T)));
+            }
+        };
+
         class BspAsset :
             public Asset
         {
         public:
-            Array<byte> data;
             typedef struct sModel
             {
                 glm::vec3 position;
@@ -48,23 +81,19 @@ namespace valve
             int FaceFlags(
                 size_t index);
 
-            // File format header
-            tBSPHeader *_header;
+            glm::vec3 Trace(
+                const glm::vec3 &from,
+                const glm::vec3 &to,
+                int clipNodeIndex = -1);
+
+            bool IsInContents(
+                const glm::vec3 &from,
+                const glm::vec3 &to,
+                int clipNodeIndex = -1);
 
             // These are mapped from the input file data
-            Array<tBSPPlane> _planeData;
-            Array<unsigned char> _textureData;
-            Array<tBSPVertex> _verticesData;
-            Array<tBSPNode> _nodeData;
-            Array<tBSPTexInfo> _texinfoData;
-            Array<tBSPFace> _faceData;
-            Array<unsigned char> _lightingData;
-            Array<tBSPClipNode> _clipnodeData;
-            Array<tBSPLeaf> _leafData;
-            Array<unsigned short> _marksurfaceData;
-            Array<tBSPEdge> _edgeData;
-            Array<int> _surfedgeData;
-            Array<tBSPModel> _modelData;
+            std::unique_ptr<BspFile> _bspFile;
+            tBSPEntity _worldspawn;
 
             // These are parsed from the mapped data
             std::vector<tBSPEntity> _entities;
@@ -77,32 +106,6 @@ namespace valve
             valve::Texture *_skytextures[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
         private:
-            // Constructs an Array from the given lump index. The memory in the lump is not owned by the lump
-            template <typename T>
-            bool LoadLump(
-                const Array<byte> &filedata,
-                Array<T> &lump,
-                int lumpIndex)
-            {
-                tBSPLump &bspLump = this->_header->lumps[lumpIndex];
-                if (filedata.count < (bspLump.offset + bspLump.size))
-                {
-                    return 0;
-                }
-
-                lump.count = bspLump.size / sizeof(T);
-                if (lump.count > 0)
-                {
-                    lump.data = (T *)(filedata.data + bspLump.offset);
-                }
-                else
-                {
-                    lump.data = nullptr;
-                }
-
-                return lump.count > 0;
-            }
-
             void CalculateSurfaceExtents(
                 const tBSPFace &in,
                 float min[2],
@@ -128,12 +131,10 @@ namespace valve
             bool LoadModels();
 
             static std::vector<sBSPEntity> LoadEntities(
-                const Array<byte> &entityData);
+                std::unique_ptr<BspFile> &bspFile);
 
             static std::vector<tBSPVisLeaf> LoadVisLeafs(
-                const Array<byte> &visdata,
-                const Array<tBSPLeaf> &_leafData,
-                const Array<tBSPModel> &_modelData);
+                std::unique_ptr<BspFile> &bspFile);
         };
 
     } // namespace hl1

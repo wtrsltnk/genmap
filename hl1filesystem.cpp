@@ -20,7 +20,7 @@ bool FileSystemSearchPath::IsInSearchPath(
         return false;
     }
 
-    return std::filesystem::path(filename).make_preferred().string()._Starts_with(_root.make_preferred().string());
+    return std::filesystem::path(filename).make_preferred().string().rfind(_root.make_preferred().string(), 0) == 0;
 }
 
 std::string FileSystemSearchPath::LocateFile(
@@ -36,7 +36,7 @@ std::string FileSystemSearchPath::LocateFile(
 
 bool FileSystemSearchPath::LoadFile(
     const std::string &filename,
-    valve::Array<valve::byte> &data)
+    std::vector<valve::byte> &data)
 {
     std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
 
@@ -49,9 +49,9 @@ bool FileSystemSearchPath::LoadFile(
 
     auto count = file.tellg();
 
-    data.Allocate(count);
+    data.resize(count);
     file.seekg(0, std::ios::beg);
-    file.read((char *)data.data, data.count);
+    file.read((char *)data.data(), count);
 
     file.close();
 
@@ -132,7 +132,7 @@ std::string PakSearchPath::LocateFile(
 
 bool PakSearchPath::LoadFile(
     const std::string &filename,
-    valve::Array<valve::byte> &data)
+    std::vector<valve::byte> &data)
 {
     if (!_pakFile.is_open())
     {
@@ -145,9 +145,9 @@ bool PakSearchPath::LoadFile(
     {
         if (relativeFilename == std::string(f.name))
         {
-            data.Allocate(f.filelen);
+            data.resize(f.filelen);
             _pakFile.seekg(f.filepos, std::fstream::beg);
-            _pakFile.read((char *)data.data, f.filelen);
+            _pakFile.read((char *)data.data(), f.filelen);
 
             return true;
         }
@@ -173,7 +173,7 @@ std::string FileSystem::LocateFile(
 
 bool FileSystem::LoadFile(
     const std::string &filename,
-    valve::Array<valve::byte> &data)
+    std::vector<valve::byte> &data)
 {
     for (auto &searchPath : _searchPaths)
     {

@@ -24,7 +24,7 @@ public:
 
     virtual bool LoadFile(
         const std::string &filename,
-        valve::Array<valve::byte> &data);
+        std::vector<valve::byte> &data);
 
 protected:
     std::filesystem::path _root;
@@ -47,7 +47,7 @@ public:
 
     virtual bool LoadFile(
         const std::string &filename,
-        valve::Array<valve::byte> &data);
+        std::vector<valve::byte> &data);
 
 private:
     void OpenPakFile();
@@ -68,7 +68,7 @@ public:
 
     virtual bool LoadFile(
         const std::string &filename,
-        valve::Array<valve::byte> &data) override;
+        std::vector<valve::byte> &data) override;
 
     const std::filesystem::path &Root() const;
     const std::string &Mod() const;

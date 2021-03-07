@@ -11,51 +11,8 @@
 namespace valve
 {
 
-    typedef std::map<std::string, std::string> KeyValueList;
-
     typedef unsigned char byte;
     typedef byte *byteptr;
-
-    template <typename T>
-    class Array
-    {
-        bool _deleteOnDestruct;
-
-    public:
-        Array() : count(0), data(nullptr), _deleteOnDestruct(false) {}
-        Array(int count) : _deleteOnDestruct(true) { this->Allocate(count); }
-        Array(int count, T *data) : count(count), data(data), _deleteOnDestruct(false) {}
-        virtual ~Array()
-        {
-            if (this->_deleteOnDestruct) this->Delete();
-        }
-
-        int count;
-        T *data;
-
-        operator T *(void)const { return data; }
-        const T &operator[](int index) const { return this->data[index]; }
-        T &operator[](int index) { return this->data[index]; }
-
-        virtual void Allocate(int count)
-        {
-            this->count = count;
-            this->data = this->count > 0 ? new T[this->count] : nullptr;
-        }
-
-        void Map(int count, T *data)
-        {
-            this->count = count;
-            this->data = data;
-        }
-
-        virtual void Delete()
-        {
-            if (this->data != nullptr) delete[] this->data;
-            this->data = nullptr;
-            this->count = 0;
-        }
-    };
 
 #define CHUNK (4096)
 
@@ -127,7 +84,7 @@ namespace valve
     {
     public:
         virtual std::string LocateFile(const std::string &relativeFilename) = 0;
-        virtual bool LoadFile(const std::string &filename, Array<byte> &data) = 0;
+        virtual bool LoadFile(const std::string &filename, std::vector<byte> &data) = 0;
 
         const std::filesystem::path &Root() const { return _root; }
         const std::string &Mod() const { return _mod; }

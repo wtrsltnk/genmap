@@ -188,6 +188,34 @@ const std::string skyFragmentShader(
     "    color = texture(tex, texCoord);"
     "}");
 
+const std::string trailVertexShader(
+    "#version 150\n"
+
+    "in vec3 a_vertex;"
+    "in vec3 a_color;"
+
+    "uniform mat4 u_matrix;"
+
+    "out vec3 cc;"
+
+    "void main()"
+    "{"
+    "   gl_Position = u_matrix * vec4(a_vertex, 1.0);"
+    "   cc = a_color;"
+    "}");
+
+const std::string trailFragmentShader(
+    "#version 150\n"
+
+    "in vec3 cc;"
+
+    "out vec4 color;"
+
+    "void main()"
+    "{"
+    "    color = vec4(cc.xyz, 1.0);"
+    "}");
+
 class GenMap
 {
 public:
@@ -367,12 +395,13 @@ public:
                 _registry.assign<ModelComponent>(entity, 0);
             }
 
-            if (bspEntity.keyvalues.count("model") != 0)
+            if (bspEntity.keyvalues.count("model") != 0 && bspEntity.classname.rfind("func_", 0) != 0)
             {
                 ModelComponent mc = {0};
-                char astrix;
 
-                std::istringstream(bspEntity.keyvalues["model"]) >> astrix >> mc.Model;
+                std::istringstream iss(bspEntity.keyvalues["model"]);
+                iss.get(); // get the astrix
+                iss >> (mc.Model);
 
                 if (mc.Model != 0)
                 {
@@ -455,15 +484,34 @@ public:
             SetupBsp();
         }
 
+        auto info_player_start = _bspAsset->FindEntityByClassname("info_player_start");
+
+        if (info_player_start != nullptr)
+        {
+            glm::vec3 angles(0.0f);
+            std::istringstream(info_player_start->keyvalues["angles"]) >> (angles.x) >> (angles.y) >> (angles.z);
+            _cam.RotateX(angles.x);
+            _cam.RotateY(angles.y);
+            _cam.RotateZ(angles.z);
+
+            glm::vec3 origin(0.0f);
+            std::istringstream(info_player_start->keyvalues["origin"]) >> (origin.x) >> (origin.y) >> (origin.z);
+            _cam.SetPosition(origin);
+        }
+
         SetupSky();
 
         _registry.sort<RenderComponent>([](const RenderComponent &lhs, const RenderComponent &rhs) {
             return lhs.Mode < rhs.Mode;
         });
 
+        _trailShader.compile(trailVertexShader, trailFragmentShader);
+        glGenBuffers(1, &VBO);
+
         return true;
     }
 
+    unsigned int VBO;
     void Resize(
         int width,
         int height)
@@ -484,6 +532,8 @@ public:
 
     std::chrono::milliseconds::rep _lastTime;
 
+    std::vector<glm::vec3> _trail;
+
     bool Tick(
         std::chrono::milliseconds::rep time,
         const struct InputState &inputState)
@@ -491,6 +541,8 @@ public:
         const float speed = 0.85f;
         float timeStep = float(time - _lastTime);
         _lastTime = time;
+
+        auto oldCamPosition = _cam.Position();
 
         if (inputState.KeyboardButtonStates[KeyboardButtons::KeyLeft] || inputState.KeyboardButtonStates[KeyboardButtons::KeyA])
         {
@@ -525,12 +577,59 @@ public:
             _cam.RotateX(glm::radians(float(diffY) * 0.1f));
         }
 
+        auto newCamPosition = _cam.Position();
+
+        if (glm::length(newCamPosition - oldCamPosition) > 0.001f)
+        {
+            auto tracedPos = _bspAsset->IsInContents(oldCamPosition, newCamPosition);
+
+            _cam.SetPosition(newCamPosition);
+
+            _trail.push_back(newCamPosition);
+
+            if (tracedPos)
+            {
+                _trail.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+            }
+            else
+            {
+                _trail.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+            }
+        }
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         RenderSky();
         RenderBsp();
+        RenderTrail();
 
         return true; // to keep running
+    }
+
+    void RenderTrail()
+    {
+        //glDisable(GL_DEPTH_TEST);
+        if (_trail.size() < 3)
+        {
+            return;
+        }
+
+        _trailShader.use();
+
+        _trailShader.setupMatrices(_projectionMatrix * _cam.GetViewMatrix());
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, _trail.size() * sizeof(glm::vec3), _trail.data(), GL_DYNAMIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(sizeof(float) * 3));
+        glEnableVertexAttribArray(1);
+
+        glDrawArrays(GL_LINE_LOOP, 0, _trail.size());
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     void RenderSky()
@@ -653,6 +752,7 @@ private:
     std::string _map;
     valve::hl1::BspAsset *_bspAsset = nullptr;
     glm::mat4 _projectionMatrix = glm::mat4(1.0f);
+    ShaderType _trailShader;
     ShaderType _skyShader;
     BufferType _skyVertexBuffer;
     GLuint _skyTextureIndices[6] = {0, 0, 0, 0, 0, 0};

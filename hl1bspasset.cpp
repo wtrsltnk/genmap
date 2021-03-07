@@ -2,6 +2,7 @@
 
 #include "hl1bsptypes.h"
 #include "stb_rect_pack.h"
+#include <glm/gtx/string_cast.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <sstream>
@@ -10,10 +11,28 @@
 namespace fs = std::filesystem;
 using namespace valve::hl1;
 
+BspFile::BspFile(
+    byte *data)
+    : _entityData(LoadLump<byte, HL1_BSP_ENTITYLUMP>(data)),
+      _planes(LoadLump<tBSPPlane, HL1_BSP_PLANELUMP>(data)),
+      _textureData(LoadLump<byte, HL1_BSP_TEXTURELUMP>(data)),
+      _verticesData(LoadLump<tBSPVertex, HL1_BSP_VERTEXLUMP>(data)),
+      _visData(LoadLump<byte, HL1_BSP_VISIBILITYLUMP>(data)),
+      _nodeData(LoadLump<tBSPNode, HL1_BSP_NODELUMP>(data)),
+      _texinfoData(LoadLump<tBSPTexInfo, HL1_BSP_TEXINFOLUMP>(data)),
+      _faceData(LoadLump<tBSPFace, HL1_BSP_FACELUMP>(data)),
+      _lightingData(LoadLump<byte, HL1_BSP_LIGHTINGLUMP>(data)),
+      _clipnodeData(LoadLump<tBSPClipNode, HL1_BSP_CLIPNODELUMP>(data)),
+      _leafData(LoadLump<tBSPLeaf, HL1_BSP_LEAFLUMP>(data)),
+      _marksurfaceData(LoadLump<unsigned short, HL1_BSP_MARKSURFACELUMP>(data)),
+      _edgeData(LoadLump<tBSPEdge, HL1_BSP_EDGELUMP>(data)),
+      _surfedgeData(LoadLump<int, HL1_BSP_SURFEDGELUMP>(data)),
+      _modelData(LoadLump<tBSPModel, HL1_BSP_MODELLUMP>(data))
+{}
+
 BspAsset::BspAsset(
     IFileSystem *fs)
-    : Asset(fs),
-      _header(nullptr)
+    : Asset(fs)
 {}
 
 BspAsset::~BspAsset()
@@ -31,45 +50,27 @@ bool BspAsset::Load(
 
     auto fullpath = std::filesystem::path(location) / filename;
 
+    std::vector<byte> data;
+
     if (!_fs->LoadFile(fullpath.string(), data))
     {
         return false;
     }
 
-    _header = (tBSPHeader *)data.data;
+    _bspFile = std::make_unique<BspFile>(data.data());
 
-    LoadLump(data, _planeData, HL1_BSP_PLANELUMP);
-    LoadLump(data, _textureData, HL1_BSP_TEXTURELUMP);
-    LoadLump(data, _verticesData, HL1_BSP_VERTEXLUMP);
-    LoadLump(data, _nodeData, HL1_BSP_NODELUMP);
-    LoadLump(data, _texinfoData, HL1_BSP_TEXINFOLUMP);
-    LoadLump(data, _faceData, HL1_BSP_FACELUMP);
-    LoadLump(data, _lightingData, HL1_BSP_LIGHTINGLUMP);
-    LoadLump(data, _clipnodeData, HL1_BSP_CLIPNODELUMP);
-    LoadLump(data, _leafData, HL1_BSP_LEAFLUMP);
-    LoadLump(data, _marksurfaceData, HL1_BSP_MARKSURFACELUMP);
-    LoadLump(data, _edgeData, HL1_BSP_EDGELUMP);
-    LoadLump(data, _surfedgeData, HL1_BSP_SURFEDGELUMP);
-    LoadLump(data, _modelData, HL1_BSP_MODELLUMP);
+    _entities = BspAsset::LoadEntities(_bspFile);
 
-    Array<byte> entityData;
-    if (LoadLump(data, entityData, HL1_BSP_ENTITYLUMP))
-    {
-        _entities = BspAsset::LoadEntities(entityData);
-    }
-
-    Array<byte> visibilityData;
-    if (LoadLump(data, visibilityData, HL1_BSP_VISIBILITYLUMP))
-    {
-        _visLeafs = BspAsset::LoadVisLeafs(visibilityData, _leafData, _modelData);
-    }
+    _visLeafs = BspAsset::LoadVisLeafs(_bspFile);
 
     std::vector<WadAsset *> wads;
-    tBSPEntity *worldspawn = FindEntityByClassname("worldspawn");
-    if (worldspawn != nullptr)
+    _worldspawn = _entities.front();
+    if (_worldspawn.classname != "worldspawn")
     {
-        wads = WadAsset::LoadWads(worldspawn->keyvalues["wad"], _fs);
+        _worldspawn = *FindEntityByClassname("worldspawn");
     }
+
+    wads = WadAsset::LoadWads(_worldspawn.keyvalues["wad"], _fs);
 
     LoadTextures(_textures, wads);
     WadAsset::UnloadWads(wads);
@@ -138,7 +139,7 @@ bool valve::hl1::BspAsset::LoadSkyTextures()
 
     for (int i = 0; i < 6; i++)
     {
-        valve::Array<valve::byte> buffer;
+        std::vector<valve::byte> buffer;
         auto filenametga = fmt::format("gfx/env/{}{}.tga", sky, shortNames[i]);
         auto location = _fs->LocateFile(filenametga);
 
@@ -170,7 +171,7 @@ bool valve::hl1::BspAsset::LoadSkyTextures()
         }
 
         int x, y, n;
-        unsigned char *data = stbi_load_from_memory(buffer.data, buffer.count, &x, &y, &n, 0);
+        unsigned char *data = stbi_load_from_memory(buffer.data(), buffer.size(), &x, &y, &n, 0);
         if (data != nullptr)
         {
             _skytextures[i] = new valve::Texture();
@@ -189,10 +190,10 @@ bool valve::hl1::BspAsset::LoadSkyTextures()
 }
 
 std::vector<sBSPEntity> BspAsset::LoadEntities(
-    const Array<byte> &entityData)
+    std::unique_ptr<BspFile> &bspFile)
 {
-    const byte *itr = entityData.data;
-    const byte *end = entityData.data + entityData.count;
+    const byte *itr = bspFile->_entityData.data();
+    const byte *end = bspFile->_entityData.data() + bspFile->_entityData.size();
 
     std::string key, value;
     std::vector<tBSPEntity> entities;
@@ -243,30 +244,28 @@ tBSPEntity *BspAsset::FindEntityByClassname(
 }
 
 std::vector<tBSPVisLeaf> BspAsset::LoadVisLeafs(
-    const Array<byte> &visdata,
-    const Array<tBSPLeaf> &leafs,
-    const Array<tBSPModel> &models)
+    std::unique_ptr<BspFile> &bspFile)
 {
-    std::vector<tBSPVisLeaf> visLeafs = std::vector<tBSPVisLeaf>(leafs.count);
+    std::vector<tBSPVisLeaf> visLeafs = std::vector<tBSPVisLeaf>(bspFile->_leafData.size());
 
-    for (int i = 0; i < leafs.count; i++)
+    for (unsigned int i = 0; i < bspFile->_leafData.size(); i++)
     {
         visLeafs[i].leafs = 0;
         visLeafs[i].leafCount = 0;
-        int visOffset = leafs[i].visofs;
+        int visOffset = bspFile->_leafData[i].visofs;
 
-        for (int j = 1; j < models[0].visLeafs; visOffset++)
+        for (int j = 1; j < bspFile->_modelData[0].visLeafs; visOffset++)
         {
-            if (visdata[visOffset] == 0)
+            if (bspFile->_visData[visOffset] == 0)
             {
                 visOffset++;
-                j += (visdata[visOffset] << 3);
+                j += (bspFile->_visData[visOffset] << 3);
             }
             else
             {
                 for (byte bit = 1; bit; bit <<= 1, j++)
                 {
-                    if (visdata[visOffset] & bit)
+                    if (bspFile->_visData[visOffset] & bit)
                         visLeafs[i].leafCount++;
                 }
             }
@@ -280,22 +279,22 @@ std::vector<tBSPVisLeaf> BspAsset::LoadVisLeafs(
         }
     }
 
-    for (int i = 0; i < leafs.count; i++)
+    for (unsigned int i = 0; i < bspFile->_leafData.size(); i++)
     {
-        int visOffset = leafs[i].visofs;
+        int visOffset = bspFile->_leafData[i].visofs;
         int index = 0;
-        for (int j = 1; j < models[0].visLeafs; visOffset++)
+        for (int j = 1; j < bspFile->_modelData[0].visLeafs; visOffset++)
         {
-            if (visdata[visOffset] == 0)
+            if (bspFile->_visData[visOffset] == 0)
             {
                 visOffset++;
-                j += (visdata[visOffset] << 3);
+                j += (bspFile->_visData[visOffset] << 3);
             }
             else
             {
                 for (byte bit = 1; bit; bit <<= 1, j++)
                 {
-                    if (visdata[visOffset] & bit)
+                    if (bspFile->_visData[visOffset] & bit)
                     {
                         visLeafs[i].leafs[index++] = j;
                     }
@@ -313,29 +312,29 @@ bool BspAsset::LoadFacesWithLightmaps(
     std::vector<tVertex> &vertices)
 {
     // Allocate the arrays for faces and lightmaps
-    tempLightmaps.resize(_faceData.count);
+    tempLightmaps.resize(_bspFile->_faceData.size());
 
     Texture whiteTexture;
     unsigned char data[8 * 8 * 3];
     memset(data, 255, 8 * 8 * 3);
     whiteTexture.SetData(8, 8, 3, data);
 
-    for (int f = 0; f < _faceData.count; f++)
+    for (unsigned int f = 0; f < _bspFile->_faceData.size(); f++)
     {
-        tBSPFace &in = _faceData[f];
-        tBSPMipTexHeader *mip = GetMiptex(_texinfoData[in.texinfo].miptexIndex);
+        tBSPFace &in = _bspFile->_faceData[f];
+        tBSPMipTexHeader *mip = GetMiptex(_bspFile->_texinfoData[in.texinfo].miptexIndex);
         tFace out;
 
         out.firstVertex = vertices.size();
         out.vertexCount = in.edgeCount;
-        out.flags = _texinfoData[in.texinfo].flags;
-        out.texture = _texinfoData[in.texinfo].miptexIndex;
+        out.flags = _bspFile->_texinfoData[in.texinfo].flags;
+        out.texture = _bspFile->_texinfoData[in.texinfo].miptexIndex;
         out.lightmap = f;
         out.plane = glm::vec4(
-            _planeData[in.planeIndex].normal[0],
-            _planeData[in.planeIndex].normal[1],
-            _planeData[in.planeIndex].normal[2],
-            _planeData[in.planeIndex].distance);
+            _bspFile->_planes[in.planeIndex].normal[0],
+            _bspFile->_planes[in.planeIndex].normal[1],
+            _bspFile->_planes[in.planeIndex].normal[2],
+            _bspFile->_planes[in.planeIndex].distance);
 
         // Flip face normal when side == 1
         if (in.side == 1)
@@ -377,9 +376,9 @@ bool BspAsset::LoadFacesWithLightmaps(
             tVertex v;
 
             // Get the edge index
-            int ei = _surfedgeData[in.firstEdge + e];
+            int ei = _bspFile->_surfedgeData[in.firstEdge + e];
             // Determine the vertex based on the edge index
-            v.position = _verticesData[_edgeData[ei < 0 ? -ei : ei].vertex[ei < 0 ? 1 : 0]].point;
+            v.position = _bspFile->_verticesData[_bspFile->_edgeData[ei < 0 ? -ei : ei].vertex[ei < 0 ? 1 : 0]].point;
 
             // Copy the normal from the plane
             v.normal = glm::vec3(out.plane);
@@ -387,7 +386,7 @@ bool BspAsset::LoadFacesWithLightmaps(
             // Reset the bone so its not used
             v.bone = -1;
 
-            tBSPTexInfo &ti = _texinfoData[in.texinfo];
+            tBSPTexInfo &ti = _bspFile->_texinfoData[in.texinfo];
             float s = glm::dot(v.position, glm::vec3(ti.vecs[0][0], ti.vecs[0][1], ti.vecs[0][2])) + ti.vecs[0][3];
             float t = glm::dot(v.position, glm::vec3(ti.vecs[1][0], ti.vecs[1][1], ti.vecs[1][2])) + ti.vecs[1][3];
 
@@ -409,11 +408,13 @@ bool BspAsset::LoadTextures(
     std::vector<Texture *> &textures,
     const std::vector<WadAsset *> &wads)
 {
-    Array<int> textureTable(int(*_textureData.data), (int *)(_textureData.data + sizeof(int)));
+    auto count = int(*_bspFile->_textureData.data());
+    auto offsetPtr = (int *)(_bspFile->_textureData.data() + sizeof(int));
+    std::vector<int> textureTable(offsetPtr, offsetPtr + count);
 
-    for (int t = 0; t < int(*_textureData.data); t++)
+    for (int t = 0; t < int(*_bspFile->_textureData.data()); t++)
     {
-        const unsigned char *textureData = _textureData.data + textureTable[t];
+        const unsigned char *textureData = _bspFile->_textureData.data() + textureTable[t];
 
         tBSPMipTexHeader *miptex = (tBSPMipTexHeader *)textureData;
 
@@ -486,11 +487,11 @@ bool BspAsset::LoadTextures(
 tBSPMipTexHeader *BspAsset::GetMiptex(
     int index)
 {
-    tBSPMipTexOffsetTable *bspMiptexTable = (tBSPMipTexOffsetTable *)_textureData.data;
+    tBSPMipTexOffsetTable *bspMiptexTable = (tBSPMipTexOffsetTable *)_bspFile->_textureData.data();
 
     if (index >= 0 && bspMiptexTable->miptexCount > index)
     {
-        return (tBSPMipTexHeader *)(_textureData.data + bspMiptexTable->offsets[index]);
+        return (tBSPMipTexHeader *)(_bspFile->_textureData.data() + bspMiptexTable->offsets[index]);
     }
 
     return 0;
@@ -507,6 +508,87 @@ int BspAsset::FaceFlags(
     return -1;
 }
 
+float dist(
+    const glm::vec3 &point,
+    const tBSPPlane &plane)
+{
+    if (plane.type < 3)
+    {
+        return point[plane.type] - plane.distance;
+    }
+    else
+    {
+        return glm::dot(plane.normal, point) - plane.distance;
+    }
+}
+#define DIST_EPSILON (1.0f / 32.0f)
+#define VectorLerp(v1, lerp, v2, c) ((c)[0] = (v1)[0] + (lerp) * ((v2)[0] - (v1)[0]), (c)[1] = (v1)[1] + (lerp) * ((v2)[1] - (v1)[1]), (c)[2] = (v1)[2] + (lerp) * ((v2)[2] - (v1)[2]))
+glm::vec3 BspAsset::Trace(
+    const glm::vec3 &from,
+    const glm::vec3 &to,
+    int clipNodeIndex)
+{
+    if (clipNodeIndex < 0)
+    {
+        clipNodeIndex = _bspFile->_modelData[0].headnode[0];
+    }
+
+    auto plane = _bspFile->_planes[_bspFile->_clipnodeData[clipNodeIndex].planeIndex];
+
+    auto fromInFront = dist(from, plane);
+    auto toInFront = dist(to, plane);
+
+    auto nextClipNode = _bspFile->_clipnodeData[clipNodeIndex].children[(toInFront >= 0.0f) ? 0 : 1];
+    if (nextClipNode < -1)
+    {
+        spdlog::debug("we are in the solid! {}", nextClipNode);
+        float frac = fromInFront < 0.0f ? (fromInFront + DIST_EPSILON) / (fromInFront - toInFront) : (fromInFront - DIST_EPSILON) / (fromInFront - toInFront);
+
+        glm::vec3 mid;
+        VectorLerp(from, frac, to, mid);
+
+        spdlog::debug("{} {} {}", glm::to_string(from), glm::to_string(mid), glm::to_string(to));
+        return mid;
+    }
+
+    if (nextClipNode < 0)
+    {
+        return to;
+    }
+
+    return Trace(from, to, nextClipNode);
+}
+
+bool BspAsset::IsInContents(
+    const glm::vec3 &from,
+    const glm::vec3 &to,
+    int clipNodeIndex)
+{
+    if (clipNodeIndex < 0)
+    {
+        clipNodeIndex = _bspFile->_modelData[0].headnode[0];
+    }
+
+    auto plane = _bspFile->_planes[_bspFile->_clipnodeData[clipNodeIndex].planeIndex];
+
+    auto toInFront = dist(to, plane);
+
+    auto nextClipNode = _bspFile->_clipnodeData[clipNodeIndex].children[(toInFront >= 0.0f) ? 0 : 1];
+    if (nextClipNode < -1)
+    {
+        spdlog::debug("we are in the solid! {}", nextClipNode);
+
+        return true;
+    }
+
+    if (nextClipNode < 0)
+    {
+        return false;
+    }
+
+    return IsInContents(from, to, nextClipNode);
+}
+
 //
 // the following computations are based on:
 // PolyEngine (c) Alexey Goloshubin and Quake I source by id Software
@@ -517,7 +599,7 @@ void BspAsset::CalculateSurfaceExtents(
     float min[2],
     float max[2]) const
 {
-    const tBSPTexInfo *t = &_texinfoData[in.texinfo];
+    const tBSPTexInfo *t = &_bspFile->_texinfoData[in.texinfo];
 
     min[0] = min[1] = 999999;
     max[0] = max[1] = -999999;
@@ -525,15 +607,15 @@ void BspAsset::CalculateSurfaceExtents(
     for (int i = 0; i < in.edgeCount; i++)
     {
         const tBSPVertex *v;
-        int e = _surfedgeData[in.firstEdge + i];
+        int e = _bspFile->_surfedgeData[in.firstEdge + i];
 
         if (e >= 0)
         {
-            v = &_verticesData[_edgeData[e].vertex[0]];
+            v = &_bspFile->_verticesData[_bspFile->_edgeData[e].vertex[0]];
         }
         else
         {
-            v = &_verticesData[_edgeData[-e].vertex[1]];
+            v = &_bspFile->_verticesData[_bspFile->_edgeData[-e].vertex[1]];
         }
 
         for (int j = 0; j < 2; j++)
@@ -570,20 +652,20 @@ bool BspAsset::LoadLightmap(
         size[c] = (int)(tmax - tmin);
     }
 
-    out.SetData(size[0] + 1, size[1] + 1, 3, _lightingData.data + in.lightOffset, false);
+    out.SetData(size[0] + 1, size[1] + 1, 3, _bspFile->_lightingData.data() + in.lightOffset, false);
 
     return true;
 }
 
 bool BspAsset::LoadModels()
 {
-    for (int m = 0; m < _modelData.count; m++)
+    for (unsigned int m = 0; m < _bspFile->_modelData.size(); m++)
     {
         tModel model;
 
-        model.position = _modelData[m].origin;
-        model.firstFace = _modelData[m].firstFace;
-        model.faceCount = _modelData[m].faceCount;
+        model.position = _bspFile->_modelData[m].origin;
+        model.firstFace = _bspFile->_modelData[m].firstFace;
+        model.faceCount = _bspFile->_modelData[m].faceCount;
 
         _models.push_back(model);
     }
