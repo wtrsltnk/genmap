@@ -38,6 +38,8 @@ bool FileSystemSearchPath::LoadFile(
     const std::string &filename,
     std::vector<valve::byte> &data)
 {
+    spdlog::debug("Opening file: {0}", filename);
+
     std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
 
     if (!file.is_open())

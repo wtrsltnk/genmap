@@ -34,6 +34,8 @@ add_executable(genmap
     camera.cpp
     camera.h
     entitycomponents.h
+    genmapapp.cpp
+    genmapapp.h
     hl1bspasset.cpp
     hl1bspasset.h
     hl1bsptypes.h
@@ -45,6 +47,7 @@ add_executable(genmap
     hltexture.h
     hltypes.h
     include/application.h
+    include/glad.c
     include/glad/glad.h
     include/glbuffer.h
     include/glshader.h
@@ -53,6 +56,10 @@ add_executable(genmap
     main.cpp
     stb_image.cpp
     stb_rect_pack.cpp
+    mdl/studio_render.cpp
+    mdl/studio_utils.cpp
+    mdl/common/mathlib.c
+    mdl/common/cmdlib.c
     )
 
 target_sources(genmap

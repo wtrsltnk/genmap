@@ -61,7 +61,7 @@ bool BspAsset::Load(
 
     _entities = BspAsset::LoadEntities(_bspFile);
 
-    _visLeafs = BspAsset::LoadVisLeafs(_bspFile);
+//    _visLeafs = BspAsset::LoadVisLeafs(_bspFile);
 
     std::vector<WadAsset *> wads;
     _worldspawn = _entities.front();

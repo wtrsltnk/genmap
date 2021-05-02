@@ -174,9 +174,9 @@ struct InputState
 
 #endif // APPLICATION_H
 
-#if 1 //def APPLICATION_IMPLEMENTATION
+#ifdef APPLICATION_IMPLEMENTATION
 
-#include "glad.c"
+#include <glad/glad.h>
 
 #ifdef _WIN32
 
