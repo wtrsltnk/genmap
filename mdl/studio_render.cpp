@@ -43,7 +43,7 @@ vec4_t g_adj; // non persistant, make static
 
 int g_smodels_total; // cookie
 
-float g_bonetransform[MAXSTUDIOBONES][3][4]; // bone transformation matrix
+float g_bonetransform[MAXSTUDIOBONES][4][4]; // bone transformation matrix
 
 int g_chrome[MAXSTUDIOVERTS][2];      // texture coords for surface normals
 int g_chromeage[MAXSTUDIOBONES];      // last time chrome vectors were updated
@@ -531,7 +531,7 @@ void StudioEntity::AdvanceFrame(float dt)
 void StudioEntity::SetUpBones(void)
 {
     static vec3_t pos[MAXSTUDIOBONES];
-    float bonematrix[3][4];
+    float bonematrix[4][4];
     static vec4_t q[MAXSTUDIOBONES];
 
     if (m_sequence >= _model->m_pstudiohdr->numseq)
@@ -587,10 +587,11 @@ void StudioEntity::SetUpBones(void)
         bonematrix[0][3] = pos[i][0];
         bonematrix[1][3] = pos[i][1];
         bonematrix[2][3] = pos[i][2];
+        bonematrix[3][3] = 0.0f;
 
         if (pbones[i].parent == -1)
         {
-            memcpy(g_bonetransform[i], bonematrix, sizeof(float) * 12);
+            memcpy(g_bonetransform[i], bonematrix, sizeof(float) * 16);
         }
         else
         {
@@ -748,7 +749,7 @@ inputs:
 	r_entorigin
 ================
 */
-void StudioEntity::DrawModel(RenderApi<glm::vec3, glm::vec4, glm::vec2> &renderer)
+void StudioEntity::DrawModel(RenderApi &renderer)
 {
     int i;
 
@@ -775,7 +776,7 @@ void StudioEntity::DrawModel(RenderApi<glm::vec3, glm::vec4, glm::vec2> &rendere
 
 ================
 */
-void StudioEntity::DrawPoints(RenderApi<glm::vec3, glm::vec4, glm::vec2> &renderer)
+void StudioEntity::DrawPoints(RenderApi &renderer)
 {
     int i;
 
@@ -788,9 +789,16 @@ void StudioEntity::DrawPoints(RenderApi<glm::vec3, glm::vec4, glm::vec2> &render
     if (m_skinnum != 0 && m_skinnum < _model->m_ptexturehdr->numskinfamilies)
         pskinref += (m_skinnum * _model->m_ptexturehdr->numskinref);
 
+    renderer.SetupBones(g_bonetransform, _model->m_pstudiohdr->numbones);
+
     for (i = 0; i < _model->m_pmodel->numverts; i++)
     {
+        /*
         VectorTransform(pstudioverts[i], g_bonetransform[pvertbone[i]], g_pxformverts[i]);
+        /*/
+        for (int w = 0; w < 3; w++)
+            g_pxformverts[i][w] = pstudioverts[i][w];
+//*/
     }
 
     glCullFace(GL_FRONT);
@@ -837,6 +845,7 @@ void StudioEntity::DrawPoints(RenderApi<glm::vec3, glm::vec4, glm::vec2> &render
 
             for (; i > 0; i--, ptricmds += 4)
             {
+                renderer.Bone(pvertbone[ptricmds[1]]);
                 if (useChrome)
                 {
                     // FIX: put these in as integer coords, not floats
@@ -859,8 +868,6 @@ void StudioEntity::DrawPoints(RenderApi<glm::vec3, glm::vec4, glm::vec2> &render
 #ifdef LEGACY_CODE
                 glColor4f(1.0, 1.0, 1.0, 1.0);
 #else
-                //                renderer.Color(glm::vec4(lv[0], lv[1], lv[2], 1.0));
-                renderer.Color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 #endif // LEGACY_CODE
 
                 auto av = g_pxformverts[ptricmds[0]];

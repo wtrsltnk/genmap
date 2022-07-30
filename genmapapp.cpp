@@ -185,12 +185,12 @@ const char *trailFragmentShader = GLSL(
         color = vec4(cc.xyz, 1.0);
     });
 
-#include "mdl/studiomodel.h"
 #include "mdl/renderapi.hpp"
+#include "mdl/studiomodel.h"
 
 static StudioModel tempmodel;
 static StudioEntity tempentity(&tempmodel);
-static RenderApi<glm::vec3, glm::vec4, glm::vec2> _renderer;
+static RenderApi _renderer;
 
 bool GenMapApp::Startup()
 {
@@ -218,20 +218,20 @@ bool GenMapApp::Startup()
         SetupBsp();
     }
 
-//    auto info_player_start = _bspAsset->FindEntityByClassname("info_player_start");
+    //    auto info_player_start = _bspAsset->FindEntityByClassname("info_player_start");
 
-//    if (info_player_start != nullptr)
-//    {
-//        glm::vec3 angles(0.0f);
-//        std::istringstream(info_player_start->keyvalues["angles"]) >> (angles.x) >> (angles.y) >> (angles.z);
-//        _cam.RotateX(angles.x);
-//        _cam.RotateY(angles.y);
-//        _cam.RotateZ(angles.z);
+    //    if (info_player_start != nullptr)
+    //    {
+    //        glm::vec3 angles(0.0f);
+    //        std::istringstream(info_player_start->keyvalues["angles"]) >> (angles.x) >> (angles.y) >> (angles.z);
+    //        _cam.RotateX(angles.x);
+    //        _cam.RotateY(angles.y);
+    //        _cam.RotateZ(angles.z);
 
-//        glm::vec3 origin(0.0f);
-//        std::istringstream(info_player_start->keyvalues["origin"]) >> (origin.x) >> (origin.y) >> (origin.z);
-//        _cam.SetPosition(origin);
-//    }
+    //        glm::vec3 origin(0.0f);
+    //        std::istringstream(info_player_start->keyvalues["origin"]) >> (origin.x) >> (origin.y) >> (origin.z);
+    //        _cam.SetPosition(origin);
+    //    }
 
     SetupSky();
 
@@ -431,6 +431,16 @@ void GenMapApp::SetupBsp()
             _registry.assign<ModelComponent>(entity, 0);
         }
 
+        if (bspEntity.classname == "info_player_deathmatch")
+        {
+            std::istringstream iss(bspEntity.keyvalues["origin"]);
+            int x, y, z;
+
+            iss >> x >> y >> z;
+
+            _cam.SetPosition(glm::vec3(x, y, z));
+        }
+
         if (bspEntity.keyvalues.count("model") != 0 && bspEntity.classname.rfind("func_", 0) != 0)
         {
             ModelComponent mc = {0};
@@ -516,78 +526,102 @@ bool GenMapApp::Tick(
     std::chrono::milliseconds::rep time,
     const struct InputState &inputState)
 {
-    const float speed = 0.85f;
+    const float speed = 0.1f;
     float timeStep = float(time - _lastTime);
-    _lastTime = time;
 
-    auto oldCamPosition = _cam.Position();
-
-    if (inputState.KeyboardButtonStates[KeyboardButtons::KeyLeft] || inputState.KeyboardButtonStates[KeyboardButtons::KeyA])
+    if (timeStep > 50)
     {
-        _cam.MoveLeft(speed * timeStep);
-    }
-    else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyRight] || inputState.KeyboardButtonStates[KeyboardButtons::KeyD])
-    {
-        _cam.MoveLeft(-speed * timeStep);
-    }
 
-    if (inputState.KeyboardButtonStates[KeyboardButtons::KeyUp] || inputState.KeyboardButtonStates[KeyboardButtons::KeyW])
-    {
-        _cam.MoveForward(speed * timeStep);
-    }
-    else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyDown] || inputState.KeyboardButtonStates[KeyboardButtons::KeyS])
-    {
-        _cam.MoveForward(-speed * timeStep);
-    }
+        _lastTime = time;
 
-    static int lastPointerX = inputState.MousePointerPosition[0];
-    static int lastPointerY = inputState.MousePointerPosition[1];
+        auto oldCamPosition = _cam.Position();
 
-    int diffX = -(inputState.MousePointerPosition[0] - lastPointerX);
-    int diffY = -(inputState.MousePointerPosition[1] - lastPointerY);
-
-    lastPointerX = inputState.MousePointerPosition[0];
-    lastPointerY = inputState.MousePointerPosition[1];
-
-    if (inputState.MouseButtonStates[MouseButtons::LeftButton])
-    {
-        _cam.RotateZ(glm::radians(float(diffX) * 0.1f));
-        _cam.RotateX(glm::radians(float(diffY) * 0.1f));
-    }
-
-    auto newCamPosition = _cam.Position();
-
-    if (glm::length(newCamPosition - oldCamPosition) > 0.001f)
-    {
-        auto tracedPos = _bspAsset->IsInContents(oldCamPosition, newCamPosition);
-
-        _cam.SetPosition(newCamPosition);
-
-        _trail.push_back(newCamPosition);
-
-        if (tracedPos)
+        if (inputState.KeyboardButtonStates[KeyboardButtons::KeyLeft] || inputState.KeyboardButtonStates[KeyboardButtons::KeyA])
         {
-            _trail.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+            _cam.MoveLeft(speed * timeStep);
         }
-        else
+        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyRight] || inputState.KeyboardButtonStates[KeyboardButtons::KeyD])
         {
-            _trail.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+            _cam.MoveLeft(-speed * timeStep);
+        }
+
+        if (inputState.KeyboardButtonStates[KeyboardButtons::KeyUp] || inputState.KeyboardButtonStates[KeyboardButtons::KeyW])
+        {
+            _cam.MoveForward(speed * timeStep);
+        }
+        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyDown] || inputState.KeyboardButtonStates[KeyboardButtons::KeyS])
+        {
+            _cam.MoveForward(-speed * timeStep);
+        }
+
+        if (inputState.KeyboardButtonStates[KeyboardButtons::KeyQ])
+        {
+            _cam.MoveUp(speed * timeStep);
+        }
+        else if (inputState.KeyboardButtonStates[KeyboardButtons::KeyZ])
+        {
+            _cam.MoveUp(-speed * timeStep);
+        }
+
+        static int lastPointerX = inputState.MousePointerPosition[0];
+        static int lastPointerY = inputState.MousePointerPosition[1];
+
+        int diffX = -(inputState.MousePointerPosition[0] - lastPointerX);
+        int diffY = -(inputState.MousePointerPosition[1] - lastPointerY);
+
+        lastPointerX = inputState.MousePointerPosition[0];
+        lastPointerY = inputState.MousePointerPosition[1];
+
+        if (inputState.MouseButtonStates[MouseButtons::LeftButton])
+        {
+            _cam.RotateZ(glm::radians(float(diffX) * 0.1f));
+            //_cam.RotateX(glm::radians(float(diffY) * 0.1f));
+        }
+
+        auto newCamPosition = _cam.Position();
+
+        if (glm::length(newCamPosition - oldCamPosition) > 0.001f)
+        {
+            glm::vec3 target;
+
+            spdlog::debug("starting trace");
+            spdlog::debug("  from          : {}, {}, {}", oldCamPosition.x, oldCamPosition.y, oldCamPosition.z);
+            spdlog::debug("  to            : {}, {}, {}", newCamPosition.x, newCamPosition.y, newCamPosition.z);
+
+            _bspAsset->restartCount = 0;
+            auto tracedPos = _bspAsset->IsInContents(oldCamPosition, newCamPosition, target, _bspAsset->_bspFile->_modelData[0].headnode[0]);
+            spdlog::debug("done : {}", _bspAsset->restartCount);
+
+            _cam.SetPosition(target);
+
+            _trail.push_back(target);
+
+            if (tracedPos)
+            {
+                _trail.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+            }
+            else
+            {
+                _trail.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+            }
+
+            oldCamPosition = target;
         }
     }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //RenderSky();
+    RenderSky();
     RenderBsp();
     RenderTrail();
 
-    tempentity.AdvanceFrame(0.01f);
+    //    tempentity.AdvanceFrame(0.01f);
 
-    tempentity.DrawModel(_renderer);
+    //    tempentity.DrawModel(_renderer);
 
-    auto m = _projectionMatrix * _cam.GetViewMatrix();
+    //    auto m = _projectionMatrix * _cam.GetViewMatrix();
 
-    _renderer.Render(m);
+    //    _renderer.Render(m);
 
     return true; // to keep running
 }

@@ -61,7 +61,7 @@ class StudioEntity
 public:
     StudioEntity(StudioModel *model);
 
-    void DrawModel(RenderApi<glm::vec3, glm::vec4, glm::vec2> &renderer);
+    void DrawModel(RenderApi &renderer);
     void AdvanceFrame(float dt);
 
     void ExtractBbox(float *mins, float *maxs);
@@ -77,13 +77,13 @@ public:
     int SetSkin(int iValue);
 
 private:
-    int m_sequence = 0;                   // sequence index
-    float m_frame = 0;                    // frame
-    int m_bodynum = 0;                    // bodypart selection
-    int m_skinnum = 0;                    // skin group selection
-    byte m_controller[4] = {0, 0, 0, 0};  // bone controllers
-    byte m_blending[2] = {0, 0};          // animation blending
-    byte m_mouth = 0;                     // mouth position
+    int m_sequence = 0;                  // sequence index
+    float m_frame = 0;                   // frame
+    int m_bodynum = 0;                   // bodypart selection
+    int m_skinnum = 0;                   // skin group selection
+    byte m_controller[4] = {0, 0, 0, 0}; // bone controllers
+    byte m_blending[2] = {0, 0};         // animation blending
+    byte m_mouth = 0;                    // mouth position
 
     StudioModel *_model = nullptr;
 
@@ -95,7 +95,7 @@ private:
     void SlerpBones(vec4_t q1[], vec3_t pos1[], vec4_t q2[], vec3_t pos2[], float s);
     void SetUpBones(void);
 
-    void DrawPoints(RenderApi<glm::vec3, glm::vec4, glm::vec2> &renderer);
+    void DrawPoints(RenderApi &renderer);
 
     void Lighting(float *lv, int bone, int flags, vec3_t normal);
     void Chrome(int *chrome, int bone, vec3_t normal);

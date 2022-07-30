@@ -61,7 +61,7 @@ bool BspAsset::Load(
 
     _entities = BspAsset::LoadEntities(_bspFile);
 
-//    _visLeafs = BspAsset::LoadVisLeafs(_bspFile);
+    //    _visLeafs = BspAsset::LoadVisLeafs(_bspFile);
 
     std::vector<WadAsset *> wads;
     _worldspawn = _entities.front();
@@ -509,18 +509,19 @@ int BspAsset::FaceFlags(
 }
 
 float dist(
-    const glm::vec3 &point,
-    const tBSPPlane &plane)
+    const tBSPPlane &plane,
+    const glm::vec3 &point)
 {
-    if (plane.type < 3)
-    {
-        return point[plane.type] - plane.distance;
-    }
-    else
+    //    if (plane.type < 3)
+    //    {
+    //        return point[plane.type] - plane.distance;
+    //    }
+    //    else
     {
         return glm::dot(plane.normal, point) - plane.distance;
     }
 }
+
 #define DIST_EPSILON (1.0f / 32.0f)
 #define VectorLerp(v1, lerp, v2, c) ((c)[0] = (v1)[0] + (lerp) * ((v2)[0] - (v1)[0]), (c)[1] = (v1)[1] + (lerp) * ((v2)[1] - (v1)[1]), (c)[2] = (v1)[2] + (lerp) * ((v2)[2] - (v1)[2]))
 glm::vec3 BspAsset::Trace(
@@ -535,8 +536,8 @@ glm::vec3 BspAsset::Trace(
 
     auto plane = _bspFile->_planes[_bspFile->_clipnodeData[clipNodeIndex].planeIndex];
 
-    auto fromInFront = dist(from, plane);
-    auto toInFront = dist(to, plane);
+    auto fromInFront = dist(plane, from);
+    auto toInFront = dist(plane, to);
 
     auto nextClipNode = _bspFile->_clipnodeData[clipNodeIndex].children[(toInFront >= 0.0f) ? 0 : 1];
     if (nextClipNode < -1)
@@ -562,31 +563,76 @@ glm::vec3 BspAsset::Trace(
 bool BspAsset::IsInContents(
     const glm::vec3 &from,
     const glm::vec3 &to,
+    glm::vec3 &target,
     int clipNodeIndex)
 {
-    if (clipNodeIndex < 0)
+    restartCount++;
+
+    if (clipNodeIndex == CONTENTS_EMPTY)
     {
-        clipNodeIndex = _bspFile->_modelData[0].headnode[0];
-    }
+        target = to;
 
-    auto plane = _bspFile->_planes[_bspFile->_clipnodeData[clipNodeIndex].planeIndex];
-
-    auto toInFront = dist(to, plane);
-
-    auto nextClipNode = _bspFile->_clipnodeData[clipNodeIndex].children[(toInFront >= 0.0f) ? 0 : 1];
-    if (nextClipNode < -1)
-    {
-        spdlog::debug("we are in the solid! {}", nextClipNode);
-
-        return true;
-    }
-
-    if (nextClipNode < 0)
-    {
         return false;
     }
 
-    return IsInContents(from, to, nextClipNode);
+    spdlog::debug("    clipNode     : {}", clipNodeIndex);
+
+    auto plane = _bspFile->_planes[_bspFile->_clipnodeData[clipNodeIndex].planeIndex];
+
+    auto toInFront = dist(plane, to);
+    auto fromInFront = dist(plane, from);
+
+    if (toInFront >= 0 && fromInFront >= 0 && _bspFile->_clipnodeData[clipNodeIndex].children[0] >= CONTENTS_EMPTY)
+    {
+        return IsInContents(from, to, target, _bspFile->_clipnodeData[clipNodeIndex].children[0]);
+    }
+
+    if (toInFront < 0 && fromInFront < 0 && _bspFile->_clipnodeData[clipNodeIndex].children[1] >= CONTENTS_EMPTY)
+    {
+        return IsInContents(from, to, target, _bspFile->_clipnodeData[clipNodeIndex].children[1]);
+    }
+
+    auto nextClipNode = _bspFile->_clipnodeData[clipNodeIndex].children[(toInFront >= 0.0f) ? 0 : 1];
+
+    if (nextClipNode == CONTENTS_EMPTY)
+    {
+        target = to;
+
+        return false;
+    }
+
+    if (nextClipNode == CONTENTS_SOLID)
+    {
+        auto dir = toInFront;
+        if (dir < 0)
+            dir -= DIST_EPSILON;
+        else
+            dir += DIST_EPSILON;
+
+        auto newTo = to + (plane.normal * -dir);
+
+        if (newTo == to)
+        {
+            target = to;
+
+            spdlog::debug("    {}, {}, {}", target.x, target.y, target.z);
+
+            return false;
+        }
+
+        target = newTo;
+
+        spdlog::debug("    jump {}", restartCount);
+        spdlog::debug("    new to       : {}, {}, {}", newTo.x, newTo.y, newTo.z);
+        spdlog::debug("    plane        : {}", _bspFile->_clipnodeData[clipNodeIndex].planeIndex);
+        spdlog::debug("    plane normal : {}, {}, {} [{}]", plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
+        spdlog::debug("    toInFront    : {}", toInFront);
+        spdlog::debug("    fromInFront  : {}", fromInFront);
+
+        return IsInContents(from, newTo, target, _bspFile->_modelData[0].headnode[0]);
+    }
+
+    return IsInContents(from, to, target, nextClipNode);
 }
 
 //

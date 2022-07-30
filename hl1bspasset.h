@@ -86,10 +86,12 @@ namespace valve
                 const glm::vec3 &to,
                 int clipNodeIndex = -1);
 
+            int restartCount = 0;
             bool IsInContents(
                 const glm::vec3 &from,
                 const glm::vec3 &to,
-                int clipNodeIndex = -1);
+                glm::vec3 &target,
+                int clipNodeIndex);
 
             // These are mapped from the input file data
             std::unique_ptr<BspFile> _bspFile;
