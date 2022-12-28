@@ -172,9 +172,20 @@ struct InputState
         std::function<void()> func);
 };
 
+bool IsKeyboardButtonPushed(
+    const struct InputState &inputState,
+    KeyboardButtons button);
+
 #endif // APPLICATION_H
 
 #ifdef APPLICATION_IMPLEMENTATION
+
+bool IsKeyboardButtonPushed(
+    const struct InputState &inputState,
+    KeyboardButtons button)
+{
+    return inputState.KeyboardButtonStates[button] && inputState.KeyboardButtonStates[button] != inputState.PreviousState->KeyboardButtonStates[button];
+}
 
 #include <glad/glad.h>
 
@@ -366,6 +377,7 @@ bool Win32Application::Startup(
 
     return true;
 }
+
 std::chrono::milliseconds::rep CurrentTime()
 {
     auto now = std::chrono::system_clock::now().time_since_epoch();

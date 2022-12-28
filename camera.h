@@ -22,6 +22,7 @@ public:
 
     void MoveForward(float amount);
     void MoveLeft(float amount);
+    void MoveUp(float amount);
 
     void RotateX(float angle);
     void RotateY(float angle);

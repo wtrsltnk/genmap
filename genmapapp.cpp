@@ -191,6 +191,7 @@ const char *trailFragmentShader = GLSL(
 static StudioModel tempmodel;
 static StudioEntity tempentity(&tempmodel);
 static RenderApi _renderer;
+static bool _skipClipping = false;
 
 bool GenMapApp::Startup()
 {
@@ -218,20 +219,20 @@ bool GenMapApp::Startup()
         SetupBsp();
     }
 
-    //    auto info_player_start = _bspAsset->FindEntityByClassname("info_player_start");
+    auto info_player_start = _bspAsset->FindEntityByClassname("info_player_start");
 
-    //    if (info_player_start != nullptr)
-    //    {
-    //        glm::vec3 angles(0.0f);
-    //        std::istringstream(info_player_start->keyvalues["angles"]) >> (angles.x) >> (angles.y) >> (angles.z);
-    //        _cam.RotateX(angles.x);
-    //        _cam.RotateY(angles.y);
-    //        _cam.RotateZ(angles.z);
+    if (info_player_start != nullptr)
+    {
+        glm::vec3 angles(0.0f);
+        std::istringstream(info_player_start->keyvalues["angles"]) >> (angles.x) >> (angles.y) >> (angles.z);
+        _cam.RotateX(angles.x);
+        _cam.RotateY(angles.y);
+        _cam.RotateZ(angles.z);
 
-    //        glm::vec3 origin(0.0f);
-    //        std::istringstream(info_player_start->keyvalues["origin"]) >> (origin.x) >> (origin.y) >> (origin.z);
-    //        _cam.SetPosition(origin);
-    //    }
+        glm::vec3 origin(0.0f);
+        std::istringstream(info_player_start->keyvalues["origin"]) >> (origin.x) >> (origin.y) >> (origin.z);
+        _cam.SetPosition(origin);
+    }
 
     SetupSky();
 
@@ -529,12 +530,16 @@ bool GenMapApp::Tick(
     const float speed = 0.1f;
     float timeStep = float(time - _lastTime);
 
-    if (timeStep > 50)
+    if (timeStep > 10)
     {
-
         _lastTime = time;
 
         auto oldCamPosition = _cam.Position();
+
+        if (IsKeyboardButtonPushed(inputState, KeyboardButtons::KeySpace))
+        {
+            _skipClipping = !_skipClipping;
+        }
 
         if (inputState.KeyboardButtonStates[KeyboardButtons::KeyLeft] || inputState.KeyboardButtonStates[KeyboardButtons::KeyA])
         {
@@ -575,7 +580,7 @@ bool GenMapApp::Tick(
         if (inputState.MouseButtonStates[MouseButtons::LeftButton])
         {
             _cam.RotateZ(glm::radians(float(diffX) * 0.1f));
-            //_cam.RotateX(glm::radians(float(diffY) * 0.1f));
+            _cam.RotateX(glm::radians(float(diffY) * 0.1f));
         }
 
         auto newCamPosition = _cam.Position();
@@ -592,7 +597,10 @@ bool GenMapApp::Tick(
             auto tracedPos = _bspAsset->IsInContents(oldCamPosition, newCamPosition, target, _bspAsset->_bspFile->_modelData[0].headnode[0]);
             spdlog::debug("done : {}", _bspAsset->restartCount);
 
-            _cam.SetPosition(target);
+            if (!_skipClipping)
+            {
+                _cam.SetPosition(target);
+            }
 
             _trail.push_back(target);
 

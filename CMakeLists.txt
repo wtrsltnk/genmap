@@ -60,6 +60,7 @@ add_executable(genmap
     mdl/studio_utils.cpp
     mdl/common/mathlib.c
     mdl/common/cmdlib.c
+    mdl/renderapi.cpp
     )
 
 target_sources(genmap

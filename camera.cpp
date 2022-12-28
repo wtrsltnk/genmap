@@ -63,6 +63,11 @@ void Camera::MoveLeft(float amount)
     this->_position += this->Left() * amount;
 }
 
+void Camera::MoveUp(float amount)
+{
+    this->_position += this->Up() * amount;
+}
+
 void Camera::RotateX(float angle)
 {
     this->_rotation = glm::rotate(this->_rotation, angle, glm::vec3(1, 0, 0));
