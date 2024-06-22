@@ -214,10 +214,12 @@ bool GenMapApp::Startup()
     spdlog::info("{} @ {}", _fs.Mod(), _fs.Root().generic_string());
 
     _bspAsset = new valve::hl1::BspAsset(&_fs);
-    if (_bspAsset->Load(_map))
+    if (!_bspAsset->Load(_map))
     {
-        SetupBsp();
+        return false;
     }
+
+    SetupBsp();
 
     auto info_player_start = _bspAsset->FindEntityByClassname("info_player_start");
 

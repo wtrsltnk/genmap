@@ -932,8 +932,6 @@ Win32Application *CreateApplication(
 
     spdlog::error("Create application failed");
 
-    exit(0);
-
     return nullptr;
 }
 #endif // _WIN32

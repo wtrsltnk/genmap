@@ -45,6 +45,8 @@ bool BspAsset::Load(
 
     if (location.empty())
     {
+        spdlog::error("Unable to find {}", filename);
+
         return false;
     }
 
