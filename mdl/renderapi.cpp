@@ -1,5 +1,7 @@
 #include "renderapi.hpp"
 
+#include <iostream>
+
 GlShader::GlShader(int type, const char *source)
     : _index(glCreateShader(type))
 {

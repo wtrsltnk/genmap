@@ -3,10 +3,8 @@
 
 #include <glad/glad.h>
 
-#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
 #include <memory>
 #include <vector>
 

@@ -4,83 +4,93 @@
 #include "hl1bsptypes.h"
 
 #include <filesystem>
-#include <string>
 #include <fstream>
+#include <string>
 
-class FileSystemSearchPath
+namespace valve
 {
-public:
-    explicit FileSystemSearchPath(
-        const std::filesystem::path &root);
 
-    explicit FileSystemSearchPath(
-        const std::string &root);
+    namespace hl1
+    {
 
-    virtual bool IsInSearchPath(
-        const std::string &filename);
+        class FileSystemSearchPath
+        {
+        public:
+            explicit FileSystemSearchPath(
+                const std::filesystem::path &root);
 
-    virtual std::string LocateFile(
-        const std::string &relativeFilename);
+            explicit FileSystemSearchPath(
+                const std::string &root);
 
-    virtual bool LoadFile(
-        const std::string &filename,
-        std::vector<valve::byte> &data);
+            virtual bool IsInSearchPath(
+                const std::string &filename);
 
-protected:
-    std::filesystem::path _root;
-};
+            virtual std::string LocateFile(
+                const std::string &relativeFilename);
 
-class PakSearchPath :
-    public FileSystemSearchPath
-{
-public:
-    explicit PakSearchPath(
-        const std::filesystem::path &root);
+            virtual bool LoadFile(
+                const std::string &filename,
+                std::vector<valve::byte> &data);
 
-    explicit PakSearchPath(
-        const std::string &root);
+        protected:
+            std::filesystem::path _root;
+        };
 
-    virtual ~PakSearchPath();
+        class PakSearchPath :
+            public FileSystemSearchPath
+        {
+        public:
+            explicit PakSearchPath(
+                const std::filesystem::path &root);
 
-    virtual std::string LocateFile(
-        const std::string &relativeFilename);
+            explicit PakSearchPath(
+                const std::string &root);
 
-    virtual bool LoadFile(
-        const std::string &filename,
-        std::vector<valve::byte> &data);
+            virtual ~PakSearchPath();
 
-private:
-    void OpenPakFile();
-    std::ifstream _pakFile;
-    valve::hl1::tPAKHeader _header;
-    std::vector<valve::hl1::tPAKLump> _files;
-};
+            virtual std::string LocateFile(
+                const std::string &relativeFilename);
 
-class FileSystem :
-    public valve::IFileSystem
-{
-public:
-    void FindRootFromFilePath(
-        const std::string &filePath);
+            virtual bool LoadFile(
+                const std::string &filename,
+                std::vector<valve::byte> &data);
 
-    virtual std::string LocateFile(
-        const std::string &relativeFilename) override;
+        private:
+            void OpenPakFile();
+            std::ifstream _pakFile;
+            valve::hl1::tPAKHeader _header;
+            std::vector<valve::hl1::tPAKLump> _files;
+        };
 
-    virtual bool LoadFile(
-        const std::string &filename,
-        std::vector<valve::byte> &data) override;
+        class FileSystem :
+            public valve::IFileSystem
+        {
+        public:
+            void FindRootFromFilePath(
+                const std::string &filePath);
 
-    const std::filesystem::path &Root() const;
-    const std::string &Mod() const;
+            virtual std::string LocateFile(
+                const std::string &relativeFilename) override;
 
-private:
-    std::filesystem::path _root;
-    std::string _mod;
-    std::vector<std::unique_ptr<FileSystemSearchPath>> _searchPaths;
+            virtual bool LoadFile(
+                const std::string &filename,
+                std::vector<valve::byte> &data) override;
 
-    void SetRootAndMod(
-        const std::filesystem::path &root,
-        const std::string &mod);
-};
+            const std::filesystem::path &Root() const;
+            const std::string &Mod() const;
+
+        private:
+            std::filesystem::path _root;
+            std::string _mod;
+            std::vector<std::unique_ptr<FileSystemSearchPath>> _searchPaths;
+
+            void SetRootAndMod(
+                const std::filesystem::path &root,
+                const std::string &mod);
+        };
+
+    } // namespace hl1
+
+} // namespace valve
 
 #endif // FILESYSTEM_H

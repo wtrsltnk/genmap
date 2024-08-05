@@ -2,6 +2,8 @@
 
 #include <spdlog/spdlog.h>
 
+using namespace valve::hl1;
+
 FileSystemSearchPath::FileSystemSearchPath(
     const std::filesystem::path &root)
     : _root(root)

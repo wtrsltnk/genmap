@@ -5,7 +5,6 @@
 #include "hl1wadasset.h"
 #include "hltexture.h"
 
-#include <set>
 #include <string>
 
 namespace valve

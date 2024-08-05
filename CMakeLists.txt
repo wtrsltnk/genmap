@@ -9,25 +9,26 @@ find_package(OPENGL REQUIRED)
 CPMAddPackage(
     NAME spdlog
     GITHUB_REPOSITORY gabime/spdlog
-    VERSION 1.7.0)
-
-CPMAddPackage(
-  NAME glm
-  GITHUB_REPOSITORY g-truc/glm
-  GIT_TAG 0.9.9.7
+    VERSION 1.14.1
 )
 
 CPMAddPackage(
-  NAME EnTT
-  VERSION 3.1.1
-  GITHUB_REPOSITORY skypjack/entt
-  # EnTT's CMakeLists screws with configuration options
-  DOWNLOAD_ONLY True
+    NAME glm
+    GITHUB_REPOSITORY g-truc/glm
+    GIT_TAG 0.9.9.8
+)
+
+CPMAddPackage(
+    NAME EnTT
+    VERSION 3.13.2
+    GITHUB_REPOSITORY skypjack/entt
+    # EnTT's CMakeLists screws with configuration options
+    DOWNLOAD_ONLY True
 )
 
 if (EnTT_ADDED)
-  add_library(EnTT INTERFACE)
-  target_include_directories(EnTT INTERFACE ${EnTT_SOURCE_DIR}/src)
+    add_library(EnTT INTERFACE)
+    target_include_directories(EnTT INTERFACE ${EnTT_SOURCE_DIR}/src)
 endif()
 
 add_executable(genmap
@@ -61,7 +62,7 @@ add_executable(genmap
     mdl/common/mathlib.c
     mdl/common/cmdlib.c
     mdl/renderapi.cpp
-    )
+)
 
 target_sources(genmap
     PRIVATE

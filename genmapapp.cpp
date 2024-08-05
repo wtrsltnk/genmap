@@ -4,15 +4,13 @@
 #include "include/application.h"
 
 #include <filesystem>
-#include <fstream>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <sstream>
 #include <stb_image.h>
-
-#define GLSL(src) "#version 330 core\n" #src
+#include <../mdl/renderapi.hpp>
 
 template <class T>
 inline std::istream &operator>>(
@@ -431,7 +429,7 @@ void GenMapApp::SetupBsp()
 
         if (bspEntity.classname == "worldspawn")
         {
-            _registry.assign<ModelComponent>(entity, 0);
+            _registry.emplace<ModelComponent>(entity, 0);
         }
 
         if (bspEntity.classname == "info_player_deathmatch")
@@ -454,7 +452,7 @@ void GenMapApp::SetupBsp()
 
             if (mc.Model != 0)
             {
-                _registry.assign<ModelComponent>(entity, mc);
+                _registry.emplace<ModelComponent>(entity, mc);
             }
             else
             {
@@ -482,7 +480,7 @@ void GenMapApp::SetupBsp()
             std::istringstream(rendermode->second) >> (rc.Mode);
         }
 
-        _registry.assign<RenderComponent>(entity, rc);
+        _registry.emplace<RenderComponent>(entity, rc);
 
         auto origin = bspEntity.keyvalues.find("origin");
         if (origin != bspEntity.keyvalues.end())
@@ -491,11 +489,11 @@ void GenMapApp::SetupBsp()
 
             std::istringstream(origin->second) >> originPosition.x >> originPosition.y >> originPosition.z;
 
-            _registry.assign<OriginComponent>(entity, originPosition);
+            _registry.emplace<OriginComponent>(entity, originPosition);
         }
         else
         {
-            _registry.assign<OriginComponent>(entity, glm::vec3(0.0f));
+            _registry.emplace<OriginComponent>(entity, glm::vec3(0.0f));
         }
     }
 
