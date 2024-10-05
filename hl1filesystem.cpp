@@ -197,12 +197,12 @@ bool FileSystem::LoadFile(
 
 void FileSystem::SetRootAndMod(
     const std::filesystem::path &root,
-    const std::string &mod)
+    const std::filesystem::path &mod)
 {
     _root = root;
     _mod = mod;
 
-    auto modPath = _root / std::filesystem::path(_mod);
+    auto modPath = _root / _mod;
 
     if (std::filesystem::exists(modPath))
     {
@@ -236,7 +236,7 @@ const std::filesystem::path &FileSystem::Root() const
     return _root;
 }
 
-const std::string &FileSystem::Mod() const
+const std::filesystem::path &FileSystem::Mod() const
 {
     return _mod;
 }
@@ -264,7 +264,7 @@ void FileSystem::FindRootFromFilePath(
         path = path.parent_path();
     }
 
-    auto lastDirectory = path.filename().generic_string();
+    auto lastDirectory = path.filename();
 
     do
     {
@@ -283,7 +283,7 @@ void FileSystem::FindRootFromFilePath(
             }
         }
 
-        lastDirectory = path.filename().generic_string();
+        lastDirectory = path.filename();
         path = path.parent_path();
 
     } while (path.has_parent_path());

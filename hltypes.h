@@ -3,8 +3,6 @@
 
 #include <filesystem>
 #include <glm/glm.hpp>
-#include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -27,7 +25,7 @@ namespace valve
         List() : size(CHUNK), data(new T[CHUNK]), count(0) {}
         virtual ~List() { this->Clear(); }
 
-        operator T *(void)const { return data; }
+        operator T *(void) const { return data; }
         const T &operator[](int i) const { return data[i]; }
         T &operator[](int i) { return data[i]; }
 
@@ -37,7 +35,7 @@ namespace valve
         {
             if (count >= size)
             {
-                //resize
+                // resize
                 T *n = new T[size + CHUNK];
                 for (int i = 0; i < size; i++)
                     n[i] = data[i];

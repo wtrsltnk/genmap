@@ -1,7 +1,9 @@
 #ifndef _HL1BSPTYPES_H_
 #define _HL1BSPTYPES_H_
 
-#include "hltypes.h"
+#include <glm/glm.hpp>
+#include <map>
+#include <string>
 
 #define HL1_BSP_SIGNATURE 30
 #define HL1_BSP_LUMPCOUNT 15

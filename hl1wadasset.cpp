@@ -18,7 +18,7 @@ WadAsset::~WadAsset()
     {
         if (_loadedLumps[i] != nullptr)
         {
-            delete[](_loadedLumps[i]);
+            delete[] (_loadedLumps[i]);
             _loadedLumps[i] = nullptr;
         }
     }
@@ -87,8 +87,12 @@ int WadAsset::IndexOf(
     const std::string &name) const
 {
     for (int l = 0; l < _header.lumpsCount; ++l)
+    {
         if (icasecmp(name, _lumps[l].name))
+        {
             return l;
+        }
+    }
 
     return -1;
 }
@@ -97,7 +101,9 @@ valve::byteptr WadAsset::LumpData(
     int index)
 {
     if (index >= _header.lumpsCount || index < 0)
+    {
         return nullptr;
+    }
 
     if (_loadedLumps[index] == nullptr)
     {
@@ -118,7 +124,9 @@ std::vector<std::string> split(
     std::istringstream f(subject);
     std::string s;
     while (getline(f, s, delim))
+    {
         result.push_back(s);
+    }
 
     return result;
 }
@@ -132,12 +140,16 @@ void join(
     char const *delim = "\n")
 {
     if (first >= last)
+    {
         return;
+    }
 
     s << *first++;
 
     for (; first != last; ++first)
+    {
         s << delim << *first;
+    }
 }
 
 std::vector<WadAsset *> WadAsset::LoadWads(

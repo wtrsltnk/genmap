@@ -321,6 +321,7 @@ bool BspAsset::LoadFacesWithLightmaps(
     memset(data, 255, 8 * 8 * 3);
     whiteTexture.SetData(8, 8, 3, data);
 
+    faces.reserve(faces.size() + _bspFile->_faceData.size());
     for (unsigned int f = 0; f < _bspFile->_faceData.size(); f++)
     {
         tBSPFace &in = _bspFile->_faceData[f];
@@ -414,7 +415,10 @@ bool BspAsset::LoadTextures(
     auto offsetPtr = (int *)(_bspFile->_textureData.data() + sizeof(int));
     std::vector<int> textureTable(offsetPtr, offsetPtr + count);
 
-    for (int t = 0; t < int(*_bspFile->_textureData.data()); t++)
+    auto textureCount = int(*_bspFile->_textureData.data());
+
+    textures.reserve(textures.size() + textureCount);
+    for (int t = 0; t < textureCount; t++)
     {
         const unsigned char *textureData = _bspFile->_textureData.data() + textureTable[t];
 
@@ -577,8 +581,6 @@ bool BspAsset::IsInContents(
         return false;
     }
 
-    spdlog::debug("    clipNode     : {}", clipNodeIndex);
-
     auto plane = _bspFile->_planes[_bspFile->_clipnodeData[clipNodeIndex].planeIndex];
 
     auto toInFront = dist(plane, to);
@@ -707,6 +709,7 @@ bool BspAsset::LoadLightmap(
 
 bool BspAsset::LoadModels()
 {
+    _models.reserve(_bspFile->_modelData.size());
     for (unsigned int m = 0; m < _bspFile->_modelData.size(); m++)
     {
         tModel model;

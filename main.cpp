@@ -4,6 +4,21 @@
 
 #include "genmapapp.h"
 
+static int counter = 0;
+
+void *operator new(std::size_t sz)
+{
+    if (sz == 0)
+        ++sz; // avoid std::malloc(0) which may return nullptr on success
+
+    counter++;
+
+    if (void *ptr = std::malloc(sz))
+        return ptr;
+
+    throw std::bad_alloc{}; // required by [new.delete.single]/3
+}
+
 int main(
     int argc,
     char *argv[])
@@ -22,5 +37,9 @@ int main(
         spdlog::debug("loading map {0}", argv[1]);
     }
 
-    return Application::Run<GenMapApp>(t);
+    auto result = Application::Run<GenMapApp>(t);
+
+    std::cout << counter << " allocations" << std::endl;
+
+    return result;
 }

@@ -2,6 +2,7 @@
 #define FILESYSTEM_H
 
 #include "hl1bsptypes.h"
+#include "hltypes.h"
 
 #include <filesystem>
 #include <fstream>
@@ -77,16 +78,16 @@ namespace valve
                 std::vector<valve::byte> &data) override;
 
             const std::filesystem::path &Root() const;
-            const std::string &Mod() const;
+            const std::filesystem::path &Mod() const;
 
         private:
             std::filesystem::path _root;
-            std::string _mod;
+            std::filesystem::path _mod;
             std::vector<std::unique_ptr<FileSystemSearchPath>> _searchPaths;
 
             void SetRootAndMod(
                 const std::filesystem::path &root,
-                const std::string &mod);
+                const std::filesystem::path &mod);
         };
 
     } // namespace hl1

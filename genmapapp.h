@@ -72,7 +72,7 @@ public:
 private:
     valve::hl1::FileSystem _fs;
     std::string _map;
-    valve::hl1::BspAsset *_bspAsset = nullptr;
+    std::unique_ptr<valve::hl1::BspAsset> _bspAsset = nullptr;
     glm::mat4 _projectionMatrix = glm::mat4(1.0f);
     ShaderType _trailShader;
     ShaderType _skyShader;

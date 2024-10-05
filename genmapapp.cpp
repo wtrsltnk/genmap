@@ -3,6 +3,7 @@
 
 #include "include/application.h"
 
+#include <../mdl/renderapi.hpp>
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -10,7 +11,6 @@
 #include <spdlog/spdlog.h>
 #include <sstream>
 #include <stb_image.h>
-#include <../mdl/renderapi.hpp>
 
 template <class T>
 inline std::istream &operator>>(
@@ -183,16 +183,12 @@ const char *trailFragmentShader = GLSL(
         color = vec4(cc.xyz, 1.0);
     });
 
-#include "mdl/renderapi.hpp"
-#include "mdl/studiomodel.h"
-
-static StudioModel tempmodel;
-static StudioEntity tempentity(&tempmodel);
-static RenderApi _renderer;
 static bool _skipClipping = false;
 
 bool GenMapApp::Startup()
 {
+    _trail.reserve(1000000);
+
     spdlog::debug("Startup()");
 
     glEnable(GL_DEBUG_OUTPUT);
@@ -209,9 +205,9 @@ bool GenMapApp::Startup()
 
     glClearColor(0.0f, 0.45f, 0.7f, 1.0f);
 
-    spdlog::info("{} @ {}", _fs.Mod(), _fs.Root().generic_string());
+    spdlog::info("{} @ {}", _fs.Mod().generic_string(), _fs.Root().generic_string());
 
-    _bspAsset = new valve::hl1::BspAsset(&_fs);
+    _bspAsset = std::make_unique<valve::hl1::BspAsset>(&_fs);
     if (!_bspAsset->Load(_map))
     {
         return false;
@@ -243,19 +239,6 @@ bool GenMapApp::Startup()
     _trailShader.compile(trailVertexShader, trailFragmentShader);
     glGenBuffers(1, &VBO);
 
-    tempmodel.Init("C:\\Games\\Counter-Strike1.3\\cstrike\\models\\player\\sas\\sas.mdl");
-
-    tempentity.SetSequence(0);
-    tempentity.SetController(0, 0.0);
-    tempentity.SetController(1, 0.0);
-    tempentity.SetController(2, 0.0);
-    tempentity.SetController(3, 0.0);
-    tempentity.SetMouth(0);
-    tempentity.SetBlending(0, 0.0);
-    tempentity.SetBlending(1, 0.0);
-
-    _renderer.Setup();
-
     return true;
 }
 
@@ -274,7 +257,7 @@ void GenMapApp::SetupSky()
     const float uv_0 = 1.0f - uv_1;
     const float size = 1.0f;
 
-    //if (renderFlag & SKY_BACK)
+    // if (renderFlag & SKY_BACK)
     _skyVertexBuffer
         .uvs(glm::vec4(uv_0, uv_0, 0, 0))
         .vertex(glm::vec3(-size, size, size));
@@ -288,7 +271,7 @@ void GenMapApp::SetupSky()
         .uvs(glm::vec4(uv_1, uv_0, 0, 0))
         .vertex(glm::vec3(size, size, size));
 
-    //if (renderFlag & SKY_DOWN)
+    // if (renderFlag & SKY_DOWN)
     _skyVertexBuffer
         .uvs(glm::vec4(uv_0, uv_1, 0, 0))
         .vertex(glm::vec3(-size, -size, size));
@@ -302,7 +285,7 @@ void GenMapApp::SetupSky()
         .uvs(glm::vec4(uv_0, uv_0, 0, 0))
         .vertex(glm::vec3(size, -size, size));
 
-    //if (renderFlag & SKY_FRONT)
+    // if (renderFlag & SKY_FRONT)
     _skyVertexBuffer
         .uvs(glm::vec4(uv_0, uv_0, 0, 0))
         .vertex(glm::vec3(size, size, -size));
@@ -330,7 +313,7 @@ void GenMapApp::SetupSky()
         .uvs(glm::vec4(uv_1, uv_0, 0, 0))
         .vertex(glm::vec3(-size, size, size));
 
-    //if (renderFlag & SKY_RIGHT)
+    // if (renderFlag & SKY_RIGHT)
     _skyVertexBuffer
         .uvs(glm::vec4(uv_1, uv_1, 0, 0))
         .vertex(glm::vec3(size, -size, -size));
@@ -344,7 +327,7 @@ void GenMapApp::SetupSky()
         .uvs(glm::vec4(uv_0, uv_1, 0, 0))
         .vertex(glm::vec3(size, -size, size));
 
-    //if (renderFlag & SKY_UP)
+    // if (renderFlag & SKY_UP)
     _skyVertexBuffer
         .uvs(glm::vec4(uv_1, uv_0, 0, 0))
         .vertex(glm::vec3(-size, size, -size));
@@ -367,7 +350,7 @@ void GenMapApp::SetupBsp()
     _normalBlendingShader.compileDefaultShader();
     _solidBlendingShader.compile(solidBlendingVertexShader, solidBlendingFragmentShader);
 
-    _lightmapIndices = std::vector<GLuint>(_bspAsset->_lightMaps.size());
+    _lightmapIndices.resize(_bspAsset->_lightMaps.size());
     glActiveTexture(GL_TEXTURE1);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     for (size_t i = 0; i < _bspAsset->_lightMaps.size(); i++)
@@ -375,13 +358,14 @@ void GenMapApp::SetupBsp()
         _lightmapIndices[i] = UploadToGl(_bspAsset->_lightMaps[i]);
     }
 
-    _textureIndices = std::vector<GLuint>(_bspAsset->_textures.size());
+    _textureIndices.resize(_bspAsset->_textures.size());
     glActiveTexture(GL_TEXTURE0);
     for (size_t i = 0; i < _bspAsset->_textures.size(); i++)
     {
         _textureIndices[i] = UploadToGl(_bspAsset->_textures[i]);
     }
 
+    _faces.reserve(_bspAsset->_faces.size());
     for (size_t f = 0; f < _bspAsset->_faces.size(); f++)
     {
         auto &face = _bspAsset->_faces[f];
@@ -419,13 +403,6 @@ void GenMapApp::SetupBsp()
     for (auto &bspEntity : _bspAsset->_entities)
     {
         const auto entity = _registry.create();
-
-        // spdlog::info("Entity {}", bspEntity.classname);
-        // for (auto kvp : bspEntity.keyvalues)
-        // {
-        //     spdlog::info("    {} = {}", kvp.first, kvp.second);
-        // }
-        // spdlog::info(" ");
 
         if (bspEntity.classname == "worldspawn")
         {
@@ -501,8 +478,6 @@ void GenMapApp::SetupBsp()
     {
         _skyTextureIndices[i] = UploadToGl(_bspAsset->_skytextures[i]);
     }
-
-    spdlog::debug("loaded {0} vertices", _vertexBuffer.vertexCount());
 }
 
 void GenMapApp::Resize(
@@ -516,11 +491,7 @@ void GenMapApp::Resize(
 
 void GenMapApp::Destroy()
 {
-    if (_bspAsset != nullptr)
-    {
-        delete _bspAsset;
-        _bspAsset = nullptr;
-    }
+    _bspAsset = nullptr;
 }
 
 bool GenMapApp::Tick(
@@ -589,28 +560,23 @@ bool GenMapApp::Tick(
         {
             glm::vec3 target;
 
-            spdlog::debug("starting trace");
-            spdlog::debug("  from          : {}, {}, {}", oldCamPosition.x, oldCamPosition.y, oldCamPosition.z);
-            spdlog::debug("  to            : {}, {}, {}", newCamPosition.x, newCamPosition.y, newCamPosition.z);
-
             _bspAsset->restartCount = 0;
             auto tracedPos = _bspAsset->IsInContents(oldCamPosition, newCamPosition, target, _bspAsset->_bspFile->_modelData[0].headnode[0]);
-            spdlog::debug("done : {}", _bspAsset->restartCount);
 
             if (!_skipClipping)
             {
                 _cam.SetPosition(target);
             }
 
-            _trail.push_back(target);
+            _trail.emplace_back(target.x, target.y, target.z);
 
             if (tracedPos)
             {
-                _trail.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                _trail.emplace_back(1.0f, 0.0f, 0.0f);
             }
             else
             {
-                _trail.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                _trail.emplace_back(0.0f, 1.0f, 0.0f);
             }
 
             oldCamPosition = target;
@@ -623,20 +589,12 @@ bool GenMapApp::Tick(
     RenderBsp();
     RenderTrail();
 
-    //    tempentity.AdvanceFrame(0.01f);
-
-    //    tempentity.DrawModel(_renderer);
-
-    //    auto m = _projectionMatrix * _cam.GetViewMatrix();
-
-    //    _renderer.Render(m);
-
     return true; // to keep running
 }
 
 void GenMapApp::RenderTrail()
 {
-    //glDisable(GL_DEPTH_TEST);
+    // glDisable(GL_DEPTH_TEST);
     if (_trail.size() < 3)
     {
         return;
