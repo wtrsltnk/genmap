@@ -498,7 +498,7 @@ bool GenMapApp::Tick(
     std::chrono::milliseconds::rep time,
     const struct InputState &inputState)
 {
-    const float speed = 0.1f;
+    const float speed = 0.4f;
     float timeStep = float(time - _lastTime);
 
     if (timeStep > 10)
